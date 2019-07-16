@@ -3,4 +3,4 @@ project(ASMPROJ C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(ASMPROJ main.c Assembler.c Assembler.h)
+add_executable(ASMPROJ main.c Assembler_LEXER.c Assembler.h)
