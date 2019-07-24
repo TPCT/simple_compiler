@@ -48,6 +48,8 @@ String strReplace(String string, String substr, String replacement) {
 
 String extractCmd(String *line) {
     if (!line || !*line || !**line) {
+        if (line && *line && !**line)
+            *line = NULL;
         return NULL;
     }
     unsigned int max_size = 10;
@@ -70,6 +72,8 @@ String extractCmd(String *line) {
 
 String extractParameter(String *line) {
     if (!line || !*line || !**line) {
+        if (line && *line && !**line)
+            *line = NULL;
         return NULL;
     }
     unsigned long long maxSize = 10;
@@ -183,6 +187,41 @@ String extractLine(String *line) {
         (*line)++;
     }
     *line = NULL;
+    return Parameter;
+}
+
+String extractLabel(String *line) {
+    if (!line || !*line || !**line) {
+        if (line && *line && !**line)
+            *line = NULL;
+        return NULL;
+    }
+    unsigned long long maxSize = 10;
+    String templine = strdup(*line);
+    String Parameter = (String) calloc(maxSize, sizeof(char));
+    for (unsigned int i = 0; **line; i++) {
+        if (i == maxSize - 2)
+            maxSize += 10,
+                    Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
+        if (*templine != ':') {
+            if (*templine == '\'' || *templine == ' ' || *templine == '\t') {
+                free(Parameter);
+                return NULL;
+            }
+            *(Parameter + i) = *templine;
+        } else {
+            templine++;
+            if (!*templine) {
+                *(Parameter + i) = '\0';
+                free(*line);
+                *line = templine;
+                return Parameter;
+            }
+            free(Parameter);
+            return NULL;
+        }
+        templine++;
+    }
     return Parameter;
 }
 

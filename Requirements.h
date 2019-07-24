@@ -16,6 +16,9 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr);
 
 String strReplace(String string, String substr, String replacement);
 
+
+String extractLabel(String *line);
+
 String extractCmd(String *line);
 
 String extractParameter(String *line);

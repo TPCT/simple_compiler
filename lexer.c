@@ -14,7 +14,7 @@ void codeReader(String code) {
     do {
         token = extractLine(&code);
         beautify(&token);
-        if (token && *token)
+        if (token)
             lineMaker(&token);
     } while (code);
     assignLabelsToJumps();
@@ -73,9 +73,11 @@ void tokenize(String *lineStringPtr, Line_Ptr line, GENERAL_PURPOSE_TOKEN_PTR gp
     char isLbl = 0;
     if (*lineStringPtr) {
         String token;
-        if (!strstr(*lineStringPtr, "MSG") && !strstr(*lineStringPtr, "'") && strstr(*lineStringPtr, ":"))
-            token = strsep(lineStringPtr, ":"),
-                    isLbl = 1;
+        if (!strstr(*lineStringPtr, "MSG") && !strstr(*lineStringPtr, "'") && strstr(*lineStringPtr, ":")) {
+            token = extractLabel(lineStringPtr);
+            if (token)
+                isLbl = 1;
+        }
         else
             token = extractCmd(lineStringPtr);
         String instructionString = strdup(token);
