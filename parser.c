@@ -122,8 +122,6 @@ void lineParamChecker(Line_Ptr line) {
                 if (paramsLens(strdup(line->lineCode)) > 2)
                     line->Error = makeParamError(line->lineCode);
             }
-            printf("%s %s\n", line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->Register_Name,
-                   Register_TYPES[line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType]);
             if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType == TEMP_REGISTER) {
                 line->Error = makeRegisterTypeError("REGISTER A MUST BE A REAL REGISTER NOT A NUMBER",
                                                     line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType);

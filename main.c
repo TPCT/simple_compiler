@@ -5,7 +5,7 @@
 int main(int argc, char *args[]) {
     String Code;
     Code = "CALL func1\n"
-           "MOV 5, 5\n"
+           "MOV A, 5\n"
            "JMP label\n"
            "MSG 'the value of register A: ', A\n"
            "END\n"
