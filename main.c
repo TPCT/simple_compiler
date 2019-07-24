@@ -4,12 +4,18 @@
 
 int main(int argc, char *args[]) {
     String Code;
-    Code = "MOV A, 5\n"
-           "MOV B, A\n"
-           "MSG 'A = ', A, '\n'\n"
-           "MSG 'B = ', B, '\n'\n"
+    Code = "MSG 'This Program Finds pow(5, 2)\n'\n"
+           "MOV A, 5\n"
+           "MOV B, 2\n"
+           "INC A\n"
+           "DEC A\n"
+           "MSG A\n"
+           "LABEL:\n"
+           "JMP LABEL\n"
+           "CMP A, B\n"
+           "JLE LABEL\n"
            "END\n";
     codeReader(Code);
-    parse();
-    totalCompile();
+    //parse();
+    //totalCompile();
 }

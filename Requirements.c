@@ -71,36 +71,52 @@ String extractCmd(String *line) {
 }
 
 String extractParameter(String *line) {
-    if (!line || !*line || !**line) {
-        if (line && *line && !**line)
+    if (!line || !*line) {
+        if (line && *line)
             *line = NULL;
         return NULL;
     }
     unsigned long long maxSize = 10;
     unsigned char isString = 0;
+    unsigned long long i = 0, j = 0;
+    String tempLine = strdup(*line);
+
     String Parameter = (String) calloc(maxSize, sizeof(char));
-    for (unsigned int i = 0; **line; i++) {
-        if (i == maxSize - 2)
-            maxSize += 10,
-                    Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
-        if (**line != ',') {
-            if (**line == '\'') {
+    for (; *(tempLine + j); i++) {
+        if (i == maxSize - 2) {
+            maxSize += 10;
+            String tempString = (String) calloc(maxSize, sizeof(char));
+            for (int k = 0; (*(tempString + k) = *(Parameter + k)); k++);
+            free(Parameter);
+            Parameter = tempString;
+        }
+        if (*(tempLine + j) != ',') {
+            if (*(tempLine + j) == '\'') {
                 if (isString)
                     isString = 0;
                 else
                     isString = 1;
             }
-            *(Parameter + i) = **line;
+            *(Parameter + i) = *(tempLine + j);
         } else {
+            j++;
             if (!isString) {
-                (*line)++;
                 *(Parameter + i) = '\0';
+                strcpy(*line, tempLine + j);
+                free(tempLine);
                 return Parameter;
             } else {
-                *(Parameter + i) = **line;
+                *(Parameter + i) = *(tempLine + j);
             }
         }
-        (*line)++;
+        j++;
+    }
+    *(Parameter + i) = '\0';
+    strcpy(*line, tempLine + j);
+    free(tempLine);
+    if (!*Parameter) {
+        free(Parameter);
+        return NULL;
     }
     return Parameter;
 }
@@ -163,9 +179,13 @@ String extractLine(String *line) {
     unsigned char isString = 0;
     String Parameter = (String) calloc(maxSize, sizeof(char));
     for (unsigned int i = 0; **line; i++) {
-        if (i == maxSize - 4)
-            maxSize += 10,
-                    Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
+        if (i == maxSize - 4) {
+            maxSize += 10;
+            String tempLine = (String) calloc(maxSize, sizeof(char));
+            for (int j = 0; (*(tempLine + j) = *(Parameter + j)); j++);
+            free(Parameter);
+            Parameter = tempLine;
+        }
         if (**line != '\n') {
             if (**line == '\'') {
                 if (isString)
@@ -187,42 +207,61 @@ String extractLine(String *line) {
         (*line)++;
     }
     *line = NULL;
+    if (!*Parameter) {
+        free(Parameter);
+        return NULL;
+    }
     return Parameter;
 }
 
-String extractLabel(String *line) {
-    if (!line || !*line || !**line) {
-        if (line && *line && !**line)
-            *line = NULL;
+String extractLabel(String_Constant line) {
+    if (!line || !*line) {
         return NULL;
     }
     unsigned long long maxSize = 10;
-    String templine = strdup(*line);
+    unsigned long long i = 0, j = 0;
     String Parameter = (String) calloc(maxSize, sizeof(char));
-    for (unsigned int i = 0; **line; i++) {
+    for (; *(line + j); i++) {
         if (i == maxSize - 2)
             maxSize += 10,
                     Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
-        if (*templine != ':') {
-            if (*templine == '\'' || *templine == ' ' || *templine == '\t') {
+        if (*(line + j) != ':') {
+            if (*(line + j) == '\'' || *(line + j) == ' ' || *(line + j) == '\t') {
                 free(Parameter);
                 return NULL;
             }
-            *(Parameter + i) = *templine;
+            *(Parameter + i) = *(line + j);
         } else {
-            templine++;
-            if (!*templine) {
+            j++;
+            if (!*(line + j)) {
                 *(Parameter + i) = '\0';
-                free(*line);
-                *line = templine;
                 return Parameter;
             }
             free(Parameter);
             return NULL;
         }
-        templine++;
+        j++;
+    }
+    *(Parameter + i) = '\0';
+    if (!*Parameter) {
+        free(Parameter);
+        return NULL;
     }
     return Parameter;
+}
+
+void printRegister(Register_Ptr reg) {
+    if (reg) {
+        printf("REGISTER NAME: %s\n", reg->Register_Name);
+        printf("REGISTER TYPE: %s\n", Register_TYPES[reg->registerType]);
+        printf("REGISTER ADDRESS: %p\n", reg);
+        if (reg->Data_Type_Settings)
+            printf("REGISTER VALUE (Double): %lf\n",
+                   reg->Register_Values.Dval);
+        else
+            printf("REGISTER VALUE (Long Long): %lld\n",
+                   reg->Register_Values.Lval);
+    }
 }
 
 Register_Ptr searchRegister(Register_Ptr *registerPtr) {
@@ -237,7 +276,8 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr) {
                     || (*installationRegister)->Register_Values.Dval == (*registerPtr)->Register_Values.Dval
             )) {
                 if (*registerPtr != *installationRegister)
-                    free(*registerPtr),
+                    free((*registerPtr)->Register_Name),
+                            free(*registerPtr),
                             *registerPtr = NULL;
                 return *installationRegister;
             }
@@ -250,8 +290,8 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr) {
         while (*installationRegister) {
             if (!strcmp((*installationRegister)->Register_Name, (*registerPtr)->Register_Name)) {
                 if (*registerPtr != *installationRegister)
-                    free(*registerPtr),
-                            *registerPtr = *installationRegister,
+                    free((*registerPtr)->Register_Name),
+                            free(*registerPtr),
                             *registerPtr = NULL;
                 else
                     (*registerPtr)->registerType = SAVED_REGISTER;
@@ -265,7 +305,8 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr) {
     while (*installationRegister) {
         if (!strcmp((*installationRegister)->Register_Name, (*registerPtr)->Register_Name)) {
             if (*registerPtr != *installationRegister)
-                free(*registerPtr),
+                free((*registerPtr)->Register_Name),
+                        free(*registerPtr),
                         *registerPtr = NULL;
             return *installationRegister;
         }
@@ -285,28 +326,8 @@ void printLine(Line_Ptr line) {
             printf("INSTRUCTION SET: %s\n", line->Instruction_String);
             printf("REGISTER A TYPE: %s\n",
                    Register_TYPES[line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType]);
-            printf("REGISTER A NAME: %s\n", line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->Register_Name);
-            printf("REGISTER A ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA);
-            if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA) {
-                if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->Data_Type_Settings)
-                    printf("REGISTER A VALUE (Double): %lf\n",
-                           line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->Register_Values.Dval);
-                else
-                    printf("REGISTER A VALUE (Long Long): %lld\n",
-                           line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->Register_Values.Lval);
-
-            }
-            if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB) {
-                printf("REGISTER B NAME: %s\n",
-                       line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB->Register_Name);
-                printf("REGISTER B ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB);
-                if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB->Data_Type_Settings)
-                    printf("REGISTER B VALUE (Double): %lf\n",
-                           line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB->Register_Values.Dval);
-                else
-                    printf("REGISTER B VALUE (Long Long): %lld\n",
-                           line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB->Register_Values.Lval);
-            }
+            printRegister(line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA);
+            printRegister(line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB);
             break;
         case JUMP_TOKEN_TYPE:
             printf("INSTRUCTION TYPE: JUMP INSTRUCTION\n");
@@ -315,28 +336,8 @@ void printLine(Line_Ptr line) {
             printf("JUMPING LABEL ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address);
             if (line->generalPurposeTokenPtr->Tokens.Jump_Token->Instruction != JMP &&
                 line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token) {
-                printf("REGISTER A TYPE: %s\n",
-                       Register_TYPES[line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterA->registerType]);
-                printf("REGISTER A NAME: %s\n",
-                       line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterA->Register_Name);
-                printf("REGISTER A ADDRESS: %p\n",
-                       line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterA);
-                if (line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterA->Data_Type_Settings)
-                    printf("REGISTER A VALUE (Double): %lf\n",
-                           line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterA->Register_Values.Dval);
-                else
-                    printf("REGISTER A VALUE (Long Long): %lld\n",
-                           line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterA->Register_Values.Lval);
-                printf("REGISTER B NAME: %s\n",
-                       line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterB->Register_Name);
-                printf("REGISTER B ADDRESS: %p\n",
-                       line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterB);
-                if (line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterB->Data_Type_Settings)
-                    printf("REGISTER B VALUE (Double): %lf\n",
-                           line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterB->Register_Values.Dval);
-                else
-                    printf("REGISTER B VALUE (Long Long): %lld\n",
-                           line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterB->Register_Values.Lval);
+                printRegister(line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterA);
+                printRegister(line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterB);
                 if (line->generalPurposeTokenPtr->Tokens.Jump_Token->Instruction != JMP)
                     printf("COMPARISON RETURN: %s\n",
                            CMP_RETURNS[line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val]);
@@ -352,20 +353,12 @@ void printLine(Line_Ptr line) {
                 printf("STRING IN MSG: %s\n", tempStringTree->message_string);
                 tempStringTree = tempStringTree->Next_String;
             }
+            printf("Registers     {\n");
             while (tempRegisterTree) {
-                printf("REGISTER TYPE: %s\n", Register_TYPES[tempRegisterTree->REGISTER->registerType]);
-                printf("REGISTER IN MSG: (REGISTER NAME:%s)\n", tempRegisterTree->REGISTER->Register_Name);
-                printf("                 (REGISTER VALUE: ");
-                if (tempRegisterTree->REGISTER->Data_Type_Settings)
-                    printf("(Double) %lf)\n",
-                           tempRegisterTree->REGISTER->Register_Values.Dval);
-                else
-                    printf("(Long Long) %lld)\n",
-                           tempRegisterTree->REGISTER->Register_Values.Lval);
-                printf("                 (REGISTER ADDRESS: %p)\n",
-                       tempRegisterTree->REGISTER);
+                printRegister(tempRegisterTree->REGISTER);
                 tempRegisterTree = tempRegisterTree->NEXT_REGISTER;
             }
+            printf("}\n");
             break;
         case RETURN_TOKEN_TYPE:
             printf("INSTRUCTION TYPE: RETURN INSTRUCTION\n");
@@ -386,26 +379,8 @@ void printLine(Line_Ptr line) {
         case CMP_TOKEN_TYPE:
             printf("INSTRUCTION TYPE: CMP INSTRUCTION\n");
             printf("INSTRUCTION SET: %s\n", line->Instruction_String);
-            printf("REGISTER A TYPE: %s\n",
-                   Register_TYPES[line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->registerType]);
-            printf("REGISTER A NAME: %s\n", line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->Register_Name);
-            printf("REGISTER A ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA);
-            if (line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->Data_Type_Settings)
-                printf("REGISTER A VALUE (Double): %lf\n",
-                       line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->Register_Values.Dval);
-            else
-                printf("REGISTER A VALUE (Long Long): %lld\n",
-                       line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->Register_Values.Lval);
-            printf("REGISTER B TYPE: %s\n",
-                   Register_TYPES[line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->registerType]);
-            printf("REGISTER B NAME: %s\n", line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->Register_Name);
-            printf("REGISTER B ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB);
-            if (line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->Data_Type_Settings)
-                printf("REGISTER B VALUE (Double): %lf\n",
-                       line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->Register_Values.Dval);
-            else
-                printf("REGISTER B VALUE (Long Long): %lld\n",
-                       line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->Register_Values.Lval);
+            printRegister(line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA);
+            printRegister(line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB);
             printf("COMPARISON RETURN: %s\n",
                    CMP_RETURNS[line->generalPurposeTokenPtr->Tokens.CMP_Token->CMP_Val]);
             break;
@@ -500,6 +475,7 @@ unsigned beautify(String *code) {
         }
         lastChar = PRESENT_CHAR;
     }
+    *code = realloc(*code, 0);
     *(newCode + newCodeCounter) = '\0';
     *code = strdup(newCode);
     free(newCode);

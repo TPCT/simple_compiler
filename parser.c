@@ -18,14 +18,17 @@ void checkLabelDuplications(Line_Ptr line) {
     if (!line->Error) {
         if (line->generalPurposeTokenPtr->tokenType == LABEL_TOKEN_TYPE) {
             Label_Token_Ptr labelTokenPtr = Labels_Container;
-            while (labelTokenPtr) {
-                if (!strcmp(labelTokenPtr->Label_Name, line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name)
-                    &&
-                    labelTokenPtr->Label_Address != line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Address) {
-                    line->Error = makeDuplicateLabelError(line->lineCode);
-                    break;
+            if (line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name) {
+                while (labelTokenPtr) {
+                    if (!strcmp(labelTokenPtr->Label_Name, line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name)
+                        &&
+                        labelTokenPtr->Label_Address !=
+                        line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Address) {
+                        line->Error = makeDuplicateLabelError(line->lineCode);
+                        break;
+                    }
+                    labelTokenPtr = labelTokenPtr->Next_Label;
                 }
-                labelTokenPtr = labelTokenPtr->Next_Label;
             }
         }
     }
@@ -82,7 +85,7 @@ void labelNameChecker(Line_Ptr line) {
                     return;
                 }
             }
-            if (paramsLens(strdup(GPT->Tokens.Label_Token->Label_Name)) > 1) {
+            if (paramsLens(GPT->Tokens.Label_Token->Label_Name) > 1) {
                 line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Label_Token->Label_Name);
                 return;
             }
@@ -93,7 +96,7 @@ void labelNameChecker(Line_Ptr line) {
                     return;
                 }
             }
-            if (paramsLens(strdup(GPT->Tokens.Jump_Token->Label_Name)) > 1) {
+            if (paramsLens(GPT->Tokens.Jump_Token->Label_Name) > 1) {
                 line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Jump_Token->Label_Name);
                 return;
             }
@@ -104,7 +107,7 @@ void labelNameChecker(Line_Ptr line) {
                     return;
                 }
             }
-            if (paramsLens(strdup(GPT->Tokens.Call_Token->Label_Name)) > 1) {
+            if (paramsLens(GPT->Tokens.Call_Token->Label_Name) > 1) {
                 line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Call_Token->Label_Name);
                 return;
             }

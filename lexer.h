@@ -10,9 +10,9 @@ Line_Ptr addLine(Line_Ptr *, Line_Ptr *);
 
 void codeReader(String code);
 
-void lineMaker(String *token);
+void lineMaker(String token);
 
-void tokenize(String *lineStringPtr, Line_Ptr line, GENERAL_PURPOSE_TOKEN_PTR gptPtr);
+void tokenize(String lineStringPtr, Line_Ptr line);
 
 void assignLabelsToJumps(void);
 
@@ -28,15 +28,15 @@ void addJump(Jump_Token_Ptr *savingPtr, Jump_Token_Ptr *jumpPtr);
 
 void addCall(Call_Token_Ptr *savingPtr, Call_Token_Ptr *callPtr);
 
-void makeCallToken(Line_Ptr line, String *lineStringPtr);
+void makeCallToken(Line_Ptr line, String lineStringPtr);
 
-void makeCmpToken(Line_Ptr line, String *lineStringPtr);
+void makeCmpToken(Line_Ptr line, String lineStringPtr);
 
-void makeMsgToken(Line_Ptr line, String *Line, String token);
+void makeMsgToken(Line_Ptr line, String Line);
 
-void makeAuToken(Line_Ptr line, String *Line, Au_Instructions i);
+void makeAuToken(Line_Ptr line, String Line, Au_Instructions i);
 
-void makeJumpToken(Line_Ptr line, String *Line, Jump_Instruction i);
+void makeJumpToken(Line_Ptr line, String Line, Jump_Instruction i);
 
 void makeLabelToken(Line_Ptr line);
 

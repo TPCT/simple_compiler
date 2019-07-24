@@ -1,6 +1,5 @@
 #ifndef REQUIREMENTS
 #define REQUIREMENTS
-
 #include <string.h>
 #include <malloc.h>
 #include <ctype.h>
@@ -17,7 +16,7 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr);
 String strReplace(String string, String substr, String replacement);
 
 
-String extractLabel(String *line);
+String extractLabel(String_Constant line);
 
 String extractCmd(String *line);
 
@@ -29,6 +28,7 @@ String extractLine(String *line);
 
 void printLine(Line_Ptr line);
 
+void printRegister(Register_Ptr reg);
 void printAllStackCode(Line_Ptr line);
 
 unsigned stringTrim(String *lineStringPtr);
