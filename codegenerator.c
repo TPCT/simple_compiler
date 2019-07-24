@@ -5,8 +5,7 @@ void totalCompile(void) {
     String msgData;
     if (!Error_Counter) {
         while (linePtr) {
-            /*
-            if (linePtr->generalPurposeTokenPtr->tokenType == CALL_TOKEN_TYPE
+            /*if (linePtr->generalPurposeTokenPtr->tokenType == CALL_TOKEN_TYPE
             || linePtr->generalPurposeTokenPtr->tokenType == JUMP_TOKEN_TYPE)
                 printLine(linePtr);
                 This line is to print the calling and jumping arguments*/
@@ -16,7 +15,7 @@ void totalCompile(void) {
             jmpCompile(&linePtr);
             auCompile(linePtr);
             msgData = extractMsg(linePtr);
-            /* this line to print any other argument printLine(linePtr); */
+            /* this line to print any other argument printLine(linePtr);*/
             if (msgData)
                 printf("%s", msgData);
             free(msgData);

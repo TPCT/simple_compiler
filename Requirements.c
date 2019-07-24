@@ -46,47 +46,6 @@ String strReplace(String string, String substr, String replacement) {
     return newstr;
 }
 
-String extractString(String *line) {
-    if (!*line || !**line) {
-        return NULL;
-    }
-    unsigned int maxSize = 10;
-    unsigned char is_string = 0;
-    String tempString = calloc(maxSize, sizeof(char));
-    for (unsigned int subStringCounter = 0; **line;) {
-        if (!is_string && **line == ',') {
-            *(tempString + subStringCounter) = '\0';
-            (*line)++;
-            *line = strdup(*line);
-            return tempString;
-        }
-        if (**line == '\'') {
-            if (is_string) {
-                *(tempString + subStringCounter++) = '\'';
-                *(tempString + subStringCounter) = '\0';
-                (*line)++;
-                if (**line == ',')
-                    (*line)++;
-                *line = strdup(*line);
-                return tempString;
-
-            } else {
-                is_string = 1;
-                *(tempString + subStringCounter++) = '\'';
-            }
-        } else {
-            if (subStringCounter == maxSize - 4) {
-                maxSize += 10;
-                tempString = (String) realloc(tempString, sizeof(char) * maxSize);
-            }
-            *(tempString + subStringCounter++) = **line;
-        }
-        (*line)++;
-    }
-    *line = NULL;
-    return tempString;
-}
-
 String extractCmd(String *line) {
     if (!line || !*line || !**line) {
         return NULL;
@@ -117,6 +76,9 @@ String extractParameter(String *line) {
     unsigned char isString = 0;
     String Parameter = (String) calloc(maxSize, sizeof(char));
     for (unsigned int i = 0; **line; i++) {
+        if (i == maxSize - 2)
+            maxSize += 10,
+                    Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
         if (**line != ',') {
             if (**line == '\'') {
                 if (isString)
@@ -124,14 +86,14 @@ String extractParameter(String *line) {
                 else
                     isString = 1;
             }
-            if (i == maxSize - 2)
-                maxSize += 10,
-                        Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
             *(Parameter + i) = **line;
         } else {
             if (!isString) {
                 (*line)++;
+                *(Parameter + i) = '\0';
                 return Parameter;
+            } else {
+                *(Parameter + i) = **line;
             }
         }
         (*line)++;
@@ -147,14 +109,20 @@ String extractMsg(Line_Ptr line) {
         String *msgBody = &tempMsg;
         String token = NULL;
         String msgText = NULL;
+        String temp_string = NULL;
         if ((!*msgBody || !**msgBody) || (!stringTree && !registerTree)) return "";
         unsigned long long maxSize = 0;
         do {
             token = extractParameter(msgBody);
             if (token && *token == '\'') {
                 maxSize += strlen(token);
-                msgText = (String) realloc(msgText, sizeof(char) * maxSize);
-                msgText = strcat(msgText, stringTree->message_string);
+                if (msgText)
+                    temp_string = msgText;
+                msgText = (String) calloc(maxSize, sizeof(char));
+                if (temp_string)
+                    strcpy(msgText, temp_string);
+                free(temp_string);
+                msgText = strcat(msgText, strReplace(stringTree->message_string, "\\n", "\n"));
                 stringTree = stringTree->Next_String;
                 free(token);
             } else if (token && *token != '\'') {
@@ -178,6 +146,44 @@ String extractMsg(Line_Ptr line) {
         return msgText;
     } else
         return NULL;
+}
+
+String extractLine(String *line) {
+    if (!line || !*line || !**line) {
+        if (line && *line && !**line) {
+            *line = NULL;
+        }
+        return NULL;
+    }
+    unsigned long long maxSize = 10;
+    unsigned char isString = 0;
+    String Parameter = (String) calloc(maxSize, sizeof(char));
+    for (unsigned int i = 0; **line; i++) {
+        if (i == maxSize - 4)
+            maxSize += 10,
+                    Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
+        if (**line != '\n') {
+            if (**line == '\'') {
+                if (isString)
+                    isString = 0;
+                else
+                    isString = 1;
+            }
+            *(Parameter + i) = **line;
+        } else {
+            if (!isString) {
+                (*line)++;
+                *(Parameter + i) = '\0';
+                return Parameter;
+            } else {
+                *(Parameter + i++) = '\\';
+                *(Parameter + i) = 'n';
+            }
+        }
+        (*line)++;
+    }
+    *line = NULL;
+    return Parameter;
 }
 
 Register_Ptr searchRegister(Register_Ptr *registerPtr) {
@@ -404,8 +410,11 @@ unsigned stringTrim(String *lineStringPtr) {
 }
 
 unsigned beautify(String *code) {
-    if (!code || !*code || !**code)
+    if (!code || !*code || !**code) {
+        if (code && *code && !**code)
+            *code = NULL;
         return 0;
+    }
 #define PRESENT_CHAR *(*code + i)
     if (!*code)
         return 0;

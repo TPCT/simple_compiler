@@ -35,7 +35,7 @@ void registerNameChecker(Line_Ptr line, Register_Ptr *registerPtr) {
 #define GPT line->generalPurposeTokenPtr
     if ((GPT->tokenType == AU_TOKEN_TYPE || GPT->tokenType == CMP_TOKEN_TYPE || GPT->tokenType == MSG_TOKEN_TYPE) &&
         !line->Error) {
-        if (registerPtr) {
+        if (*registerPtr) {
             for (int i = 0; reservedWords[i]; i++) {
                 if (!strcmp((*registerPtr)->Register_Name, reservedWords[i])) {
                     line->Error = makeRegisterNamingError(line->lineCode,
@@ -65,8 +65,9 @@ void registerNameChecker(Line_Ptr line, Register_Ptr *registerPtr) {
                 }
             }
         } else {
-            if (GPT->tokenType == AU_TOKEN_TYPE && (GPT->Tokens.Au_Token->Instruction != INC
-                                                    && GPT->Tokens.Au_Token->Instruction != DEC))
+            if (GPT->tokenType == AU_TOKEN_TYPE && (GPT->Tokens.Au_Token->Instruction == INC
+                                                    || GPT->Tokens.Au_Token->Instruction == DEC));
+            else
                 line->Error = makeNullRegisterError(line->lineCode);
         }
     }
@@ -183,7 +184,7 @@ void lineParamChecker(Line_Ptr line) {
             Msg_String_Ptr msgStringPtr = line->generalPurposeTokenPtr->Tokens.MSG_Token->String_Tree;
             while (msgStringPtr) {
                 unsigned length = stringTrim(&msgStringPtr->MSG_TOKEN_STRING);
-                if (*(msgStringPtr->MSG_TOKEN_STRING) == '\'' &&
+                if (length >= 2 && *(msgStringPtr->MSG_TOKEN_STRING) == '\'' &&
                     *(msgStringPtr->MSG_TOKEN_STRING + length - 1) == '\'') {
                 } else {
                     line->Error = makeSyntaxError(line->lineCode);

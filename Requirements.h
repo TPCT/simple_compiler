@@ -16,13 +16,13 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr);
 
 String strReplace(String string, String substr, String replacement);
 
-String extractString(String *line);
-
 String extractCmd(String *line);
 
 String extractParameter(String *line);
 
 String extractMsg(Line_Ptr line);
+
+String extractLine(String *line);
 
 void printLine(Line_Ptr line);
 

@@ -4,21 +4,12 @@
 
 int main(int argc, char *args[]) {
     String Code;
-    Code = "CALL func1\n"
-           "MOV A, 5\n"
-           "JMP label\n"
-           "MSG 'the value of register A: ', A\n"
-           "END\n"
-           "label:\n"
-           "func1:\n"
-           "CALL func2\n"
-           "MOV A, 6\n"
-           "RET\n"
-           "func2:\n"
-           "MOV A, 3\n"
-           "RET\n";
+    Code = "MOV A, 5\n"
+           "MOV B, A\n"
+           "MSG 'A = ', A, '\n'\n"
+           "MSG 'B = ', B, '\n'\n"
+           "END\n";
     codeReader(Code);
     parse();
     totalCompile();
-
 }

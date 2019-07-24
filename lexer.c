@@ -10,11 +10,11 @@ static String_Constant END = "END";   /* For end of program detection */
 
 void codeReader(String code) {
     code = strdup(code);
+    String token;
     do {
-        String token = strsep(&code, "\n");
+        token = extractLine(&code);
         beautify(&token);
-        //printf("%s\n", token);
-        if (*token)
+        if (token && *token)
             lineMaker(&token);
     } while (code);
     assignLabelsToJumps();
@@ -215,7 +215,9 @@ void makeMsgToken(Line_Ptr line, String *lineStringPtr, String token) {
     MSG_Register_Ptr *msgRegisterPtr = &msgTokenPtr->Registers_Tree;
     msgTokenPtr->MSG_BODY = strdup(*lineStringPtr);
     do {
-        token = extractString(lineStringPtr);
+        token = extractParameter(lineStringPtr);
+        if (!token)
+            break;
         unsigned int length = stringTrim(&token);
         if (*token == '\'' || *(token + length - 1) == '\'') {
             *tempMsgStringPtr = (Msg_String_Ptr) calloc(1, sizeof(MSG_STRING));
