@@ -32,6 +32,7 @@ typedef enum Error_Type {
     INVALID_RETURN_TOKEN_ERROR,
     DUPLICATED_LABEL_ERROR,
     REGISTER_TYPE_ERROR,
+    UNBOUNDED_RETURN_CALL_ERROR,
     UNDEFINED_REGISTER_NAME,
     UNBOUNDED_CMP_ERROR
 } Error_Type;
@@ -116,6 +117,7 @@ typedef struct Call_Token {
     Line_Ptr associatedLine;
     Line_Ptr Line_Address;
     String Label_Name;
+    Return_Token_Ptr RET_TOKEN;
     Call_Token_Ptr Next_Call;
 } Call_Token;
 typedef struct Calls_Tree {

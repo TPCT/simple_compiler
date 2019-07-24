@@ -125,9 +125,11 @@ void lineParamChecker(Line_Ptr line) {
             }
             printf("%s %s\n", line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->Register_Name,
                    Register_TYPES[line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType]);
-            if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType == TEMP_REGISTER)
+            if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType == TEMP_REGISTER) {
                 line->Error = makeRegisterTypeError("REGISTER A MUST BE A REAL REGISTER NOT A NUMBER",
                                                     line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType);
+                break;
+            }
             registerNameChecker(line, &line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA);
             registerNameChecker(line, &line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB);
             break;
@@ -165,6 +167,10 @@ void lineParamChecker(Line_Ptr line) {
             line->generalPurposeTokenPtr->Tokens.Call_Token->isCalling = 0;
             if (paramsLens(strdup(line->lineCode)) > 1) {
                 line->Error = makeSyntaxError(line->lineCode);
+                break;
+            }
+            if (!line->generalPurposeTokenPtr->Tokens.Call_Token->RET_TOKEN) {
+                line->Error = makeReturnTokenError(line->lineCode);
                 break;
             }
             if (!line->generalPurposeTokenPtr->Tokens.Call_Token->Line_Address)
@@ -368,4 +374,19 @@ Error_Ptr makeInvalidReturnError(String lineCode) {
     Error_Counter++;
     return error;
 }
+
+Error_Ptr makeReturnTokenError(String lineCode) {
+    Error_Ptr error = (Error_Ptr) malloc(sizeof(Error));
+    error->errorType = UNBOUNDED_RETURN_CALL_ERROR;
+    unsigned length = snprintf(NULL, 0, "UNBOUNDED RETURN CALL ERROR AT LINE %s",
+                               lineCode);
+    String errorMsg = malloc(sizeof(char) * (length + 1));
+    snprintf(errorMsg, length + 1, "UNBOUNDED RETURN CALL ERROR AT LINE %s",
+             lineCode);
+    error->Error_MSG = errorMsg;
+    Error_Counter++;
+    return error;
+}
+
+
 

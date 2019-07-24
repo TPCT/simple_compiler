@@ -179,6 +179,7 @@ void actualRegisterPtrAdd(Register_Ptr *savingRegister, Register_Ptr *registerPt
 
 void makeCallToken(Line_Ptr line, String *lineStringPtr) {
     Call_Token_Ptr callTokenPtr = (Call_Token_Ptr) calloc(1, sizeof(Call_Token));
+    callTokenPtr->RET_TOKEN = NULL;
     callTokenPtr->associatedLine = line;
     callTokenPtr->Label_Name = strsep(lineStringPtr, " ");
     line->generalPurposeTokenPtr->tokenType = CALL_TOKEN_TYPE;
@@ -317,7 +318,8 @@ void makeReturnToken(Line_Ptr line) {
         while (*callTokenPtr) {
             if (!strcmp((*callTokenPtr)->Label_Name, returnTokenPtr->Label_Name))
                 Last_LABEL = NULL,
-                        returnTokenPtr->callToken = *callTokenPtr;
+                returnTokenPtr->callToken = *callTokenPtr,
+                returnTokenPtr->callToken->RET_TOKEN = returnTokenPtr;
             callTokenPtr = &(*callTokenPtr)->Next_Call;
         }
     } else {

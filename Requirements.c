@@ -11,6 +11,7 @@ String_Constant ERRORS_TYPES[] = {"SYNTAX ERROR",
                                   "INVALID RETURN TOKEN ERROR",
                                   "DUPLICATED LABEL NAME ERROR",
                                   "REGISTER TYPE ERROR",
+                                  "UNBOUNDED RETURN CALL ERROR",
                                   "UNIDENTIFIED REGISTER NAME ERROR",
                                   "UNBOUNDED CMP TOKEN ERROR"};
 

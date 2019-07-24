@@ -40,3 +40,5 @@ Error_Ptr makeInvalidReturnError(String lineCode);
 Error_Ptr makeUnboundedCmpError(String lineCode);
 
 Error_Ptr makeRegisterTypeError(String lineCode, Register_Type type);
+
+Error_Ptr makeReturnTokenError(String lineCode);
