@@ -19,6 +19,6 @@ int main(int argc, char *args[]) {
            "RET\n";
     codeReader(Code);
     parse();
-    //totalCompile();
+    totalCompile();
 
 }

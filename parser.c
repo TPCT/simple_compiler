@@ -10,7 +10,6 @@ void parse(void) {
         lineParamChecker(linePtr);
         checkLabelDuplications(linePtr);
         labelNameChecker(linePtr);
-        printLine(linePtr);
         linePtr = linePtr->Next_Line;
     }
 }
