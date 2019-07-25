@@ -143,7 +143,6 @@ String extractParameter(String *line) {
     return Parameter;
 }
 
-
 String extractMsg(Line_Ptr line) {
     if (line->linetype == msgLine) {
         String tempMsg = strdup(line->generalPurposeTokenPtr->Tokens.MSG_Token->MSG_BODY);
