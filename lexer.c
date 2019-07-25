@@ -251,7 +251,7 @@ void makeMsgToken(Line_Ptr line, String_Constant lineStringPtr) {
             (*msgRegisterPtr) = (MSG_Register_Ptr) calloc(1, sizeof(MSG_REGISTER));
             (*msgRegisterPtr)->REGISTER = extractRegister(&token);
             tempRegister = searchRegister(&(*msgRegisterPtr)->REGISTER);
-            if (!(*msgRegisterPtr)->REGISTER)
+            if (!(*msgRegisterPtr)->REGISTER || (*msgRegisterPtr)->REGISTER->registerType == TEMP_REGISTER)
                 (*msgRegisterPtr)->REGISTER = tempRegister;
             else
                 (*msgRegisterPtr)->REGISTER->registerType = UNDEFINED_REGISTER;
@@ -351,9 +351,9 @@ void makeReturnToken(Line_Ptr line) {
 }
 
 Register_Ptr extractRegister(String *code) {
-    char is_dbl = 0;
     double dnum = 0, numberDivisor = 10;
     long long llnum = 0;
+    bool isNegative = False, numberStarted = False, isDbl = False;
     Register_Ptr regPtr = NULL;
     String token = NULL;
     if (*code) {
@@ -361,10 +361,10 @@ Register_Ptr extractRegister(String *code) {
         regPtr = (Register_Ptr) malloc(sizeof(Register));
         regPtr->Next_Register = NULL;
         if (token && *token) {
-            if (isdigit(*token))
                 for (int i = 0; *(token + i); i++) {
                     if (isdigit(*(token + i))) {
-                        if (!is_dbl) {
+                        numberStarted = True;
+                        if (!isDbl) {
                             dnum *= 10;
                             dnum += *(token + i) - '0';
                             llnum = (long long) dnum;
@@ -372,24 +372,33 @@ Register_Ptr extractRegister(String *code) {
                             dnum += (*(token + i) - '0') / numberDivisor;
                             numberDivisor *= 10;
                         }
-                    } else if (*(token + i) == '.') {
-                        is_dbl = 1;
-                    } else {
-                        goto jumping_label;
+                    } else if (!isDbl && *(token + i) == '.') {
+                        isDbl = True;
+                    } else if (!numberStarted) {
+                        if (*(token + i) == '-') {
+                            if (isNegative)
+                                isNegative = False;
+                            else
+                                isNegative = True;
+                            continue;
+                        } else if (*(token + i) == '+')
+                            continue;
+                        else {
+                            regPtr->Register_Name = strdup(token);
+                            regPtr->registerType = SAVED_REGISTER;
+                            regPtr->Data_Type_Settings = 0;
+                            regPtr->Register_Values.Lval = 0;
+                            free(token);
+                            return regPtr;
+                        }
                     }
                 }
-            else {
-                jumping_label:
-                regPtr->Register_Name = strdup(token);
-                regPtr->registerType = SAVED_REGISTER;
-                regPtr->Data_Type_Settings = 0;
-                regPtr->Register_Values.Lval = 0;
-                free(token);
-                return regPtr;
-            }
             regPtr->Register_Name = "TEMP";
             regPtr->registerType = TEMP_REGISTER;
-            if (is_dbl)
+            if (isNegative)
+                dnum *= -1,
+                        llnum *= -1;
+            if (isDbl)
                 regPtr->Data_Type_Settings = 1,
                         regPtr->Register_Values.Dval = dnum;
             else

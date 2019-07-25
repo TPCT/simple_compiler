@@ -295,7 +295,7 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr) {
     if (!*registerPtr)
         return *registerPtr;
     Register_Ptr *installationRegister = NULL;
-    if (!strcmp((*registerPtr)->Register_Name, "TEMP")) {
+    if ((*registerPtr)->registerType == TEMP_REGISTER) {
         installationRegister = &Temp_Registers_Tree;
         while (*installationRegister) {
             if ((*installationRegister)->Data_Type_Settings == (*registerPtr)->Data_Type_Settings && (
@@ -309,9 +309,9 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr) {
                 return *installationRegister;
             }
             installationRegister = &(*installationRegister)->Next_Register;
-            *installationRegister = *registerPtr;
-            return *installationRegister;
         }
+        *installationRegister = *registerPtr;
+        return *installationRegister;
     } else {
         installationRegister = &Actual_Registers_Tree;
         while (*installationRegister) {
