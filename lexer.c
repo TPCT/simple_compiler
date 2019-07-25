@@ -341,9 +341,13 @@ void makeLabelToken(Line_Ptr line) {
 
 void makeReturnToken(Line_Ptr line) {
     line->linetype = returnLine;
-    line->generalPurposeTokenPtr->Tokens.returnToken = Last_LABEL;
-    line->generalPurposeTokenPtr->Tokens.returnToken->hasReturn = True;
-    Last_LABEL = NULL;
+    if (Last_LABEL) {
+        line->generalPurposeTokenPtr->Tokens.returnToken = Last_LABEL;
+        line->generalPurposeTokenPtr->Tokens.returnToken->hasReturn = True;
+        Last_LABEL = NULL;
+        return;
+    }
+    line->generalPurposeTokenPtr->Tokens.Label_Token = NULL;
 }
 
 Register_Ptr extractRegister(String *code) {

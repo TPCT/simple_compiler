@@ -14,7 +14,8 @@ String_Constant ERRORS_TYPES[] = {"SYNTAX ERROR",
                                   "REGISTER TYPE ERROR",
                                   "UNIDENTIFIED REGISTER NAME ERROR",
                                   "UNBOUNDED CMP TOKEN ERROR",
-                                  "CALLING FUNCTION WITHOUT RETURN ERROR"};
+                                  "CALLING FUNCTION WITHOUT RETURN ERROR",
+                                  "UNBOUNDED RETURN ERROR"};
 
 
 String strReplace(String_Constant string, String_Constant substr, String_Constant replacement) {
@@ -388,16 +389,6 @@ void printLine(Line_Ptr line) {
             }
             printf("}\n");
             break;
-        case returnLine:
-            printf("INSTRUCTION TYPE: RETURN INSTRUCTION\n");
-            printf("INSTRUCTION SET: RET\n");
-            printf("ASSOCIATED LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.returnToken->Label_Name);
-            printf("ASSOCIATED CALL TOKEN: %p\n", line->generalPurposeTokenPtr->Tokens.returnToken->last_caller);
-            if (line->generalPurposeTokenPtr->Tokens.returnToken->last_caller)
-                printf("ASSOCIATED LINE ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.returnToken->last_caller);
-            else
-                printf("ASSOCIATED LINE ADDRESS: %p\n", NULL);
-            break;
         case endLine:
             printf("INSTRUCTION TYPE: END INSTRUCTION\n");
             break;
@@ -423,6 +414,24 @@ void printLine(Line_Ptr line) {
             printf("LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name);
             printf("LABEL ADDRESS %p\n", line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Address);
             break;
+        case returnLine:
+            printf("INSTRUCTION TYPE: RETURN INSTRUCTION\n");
+            printf("INSTRUCTION SET: RET\n");
+            if (line->generalPurposeTokenPtr->Tokens.returnToken) {
+                printf("ASSOCIATED LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.returnToken->Label_Name);
+                printf("ASSOCIATED CALL TOKEN: %p\n", line->generalPurposeTokenPtr->Tokens.returnToken->last_caller);
+                if (line->generalPurposeTokenPtr->Tokens.returnToken->last_caller)
+                    printf("ASSOCIATED LINE ADDRESS: %p\n",
+                           line->generalPurposeTokenPtr->Tokens.returnToken->last_caller);
+                else
+                    printf("ASSOCIATED LINE ADDRESS: %p\n", NULL);
+            } else {
+                printf("ASSOCIATED LABEL NAME: %s\n", "(nil)");
+                printf("ASSOCIATED CALL TOKEN: %s\n", "(nil)");
+                printf("ASSOCIATED LINE ADDRESS: %s\n", "(nil)");
+            }
+            break;
+
         default:
             printf("INSTRUCTION TYPE: UNDEFINED INSTRUCTION\n");
             break;

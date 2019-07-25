@@ -9,7 +9,8 @@ int main(int argc, char *args[]) {
             "CALL LABEL\n"
             "END\n"
             "LABEL :\n"
-            "MSG 'THIS MSG IS FROM FUNCTION LABEL\n'\n"
+            "MSG 'THIS MSG IS FROM FUNCTION LABEL'\n"
+            "RET\n"
             "RET\n";
     codeReader(Code);
     parse();

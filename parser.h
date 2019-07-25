@@ -37,6 +37,8 @@ Error_Ptr makeUnboundedJumpError(String lineCode);
 
 Error_Ptr makeInvalidReturnError(String lineCode);
 
+Error_Ptr makeUnboundedReturnError(String lineCode);
+
 Error_Ptr makeCallWithoutReturn(String lineCode);
 
 Error_Ptr makeUnboundedCmpError(String lineCode);

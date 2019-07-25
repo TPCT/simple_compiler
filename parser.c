@@ -199,6 +199,10 @@ void lineParamChecker(Line_Ptr line) {
                 line->Error = makeSyntaxError(line->lineCode);
                 break;
             }
+            if (!GPT->Tokens.returnToken) {
+                line->Error = makeUnboundedReturnError(line->lineCode);
+                break;
+            }
             if (!GPT->Tokens.returnToken->Label_Address)
                 line->Error = makeInvalidReturnError(line->lineCode);
             break;
@@ -338,6 +342,19 @@ Error_Ptr makeUnboundedJumpError(String lineCode) {
                                lineCode);
     String errorMsg = malloc(sizeof(char) * (length + 1));
     snprintf(errorMsg, length + 1, "UNBOUNDED JUMP ERROR AT LINE %s",
+             lineCode);
+    error->Error_MSG = errorMsg;
+    Error_Counter++;
+    return error;
+}
+
+Error_Ptr makeUnboundedReturnError(String lineCode) {
+    Error_Ptr error = (Error_Ptr) malloc(sizeof(Error));
+    error->errorType = UNBOUNDED_RETURN_ERROR;
+    unsigned length = snprintf(NULL, 0, "UNBOUNDED RETURN ERROR AT LINE %s",
+                               lineCode);
+    String errorMsg = malloc(sizeof(char) * (length + 1));
+    snprintf(errorMsg, length + 1, "UNBOUNDED RETURN ERROR AT LINE %s",
              lineCode);
     error->Error_MSG = errorMsg;
     Error_Counter++;
