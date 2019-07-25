@@ -4,13 +4,17 @@
 
 int main(int argc, char *args[]) {
     char Code[] =
-            "MSG 'This Program Finds pow(5, 2)\n'\n"
-            "MOV A, 5\n"
-            "CALL LABEL\n"
+            "MSG 'THIS PROGRAM CALCULATES 7!\n'\n"
+            "MOV A, 7\n"
+            "MOV B, 1\n"
+            "CALL fact_7\n"
+            "MSG '7! = ', B, '\n'\n"
             "END\n"
-            "LABEL :\n"
-            "MSG 'THIS MSG IS FROM FUNCTION LABEL'\n"
-            "RET\n"
+            "fact_7 :\n"
+            "MUL B, A\n"
+            "DEC A\n"
+            "CMP A, 0\n"
+            "JG fact_7\n"
             "RET\n";
     codeReader(Code);
     parse();

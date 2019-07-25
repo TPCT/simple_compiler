@@ -195,3 +195,8 @@ void retCompile(Line_Ptr *line) {
         *line = GPT.returnToken->last_caller;
     }
 }
+
+/** TODO:
+ * nested functions handling
+ * user input handling
+**/
