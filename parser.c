@@ -161,6 +161,11 @@ void lineParamChecker(Line_Ptr line) {
                 line->Error = makeUnboundedCallError(line->lineCode);
                 break;
             }
+            if (!GPT->Tokens.Call_Token->labelLine->generalPurposeTokenPtr->Tokens.Label_Token->hasReturn) {
+                line->Error = makeCallWithoutReturn(line->lineCode);
+                break;
+            }
+            break;
         case labelLine:
             if (paramsLens(line->lineCode) > 1) {
                 line->Error = makeSyntaxError(line->lineCode);
@@ -210,6 +215,7 @@ void lineParamChecker(Line_Ptr line) {
 
 unsigned paramsLens(String code) {
     unsigned paramsLen = 0;
+    code = strdup(code);
     String token;
     do {
         token = extractParameter(&code);
@@ -217,6 +223,7 @@ unsigned paramsLens(String code) {
             paramsLen++;
         free(token);
     } while (code && token);
+    free(code);
     return paramsLen;
 }
 
@@ -344,6 +351,19 @@ Error_Ptr makeUnboundedCmpError(String lineCode) {
                                lineCode);
     String errorMsg = malloc(sizeof(char) * (length + 1));
     snprintf(errorMsg, length + 1, "UNBOUNDED CMP ERROR AT LINE %s",
+             lineCode);
+    error->Error_MSG = errorMsg;
+    Error_Counter++;
+    return error;
+}
+
+Error_Ptr makeCallWithoutReturn(String lineCode) {
+    Error_Ptr error = (Error_Ptr) malloc(sizeof(Error));
+    error->errorType = CALLING_FUNCTION_WITHOUT_RETURN;
+    unsigned length = snprintf(NULL, 0, "CALLING FUNCTION WITHOUT RETURN ERROR AT LINE %s\nUSE JMP INSTRUCTION",
+                               lineCode);
+    String errorMsg = malloc(sizeof(char) * (length + 1));
+    snprintf(errorMsg, length + 1, "CALLING FUNCTION WITHOUT RETURN ERROR AT LINE %s\nUSE JMP INSTRUCTION",
              lineCode);
     error->Error_MSG = errorMsg;
     Error_Counter++;

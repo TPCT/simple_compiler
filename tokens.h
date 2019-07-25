@@ -31,9 +31,9 @@ typedef enum Error_Type {
     INVALID_RETURN_TOKEN_ERROR,
     DUPLICATED_LABEL_ERROR,
     REGISTER_TYPE_ERROR,
-    UNBOUNDED_RETURN_CALL_ERROR,
     UNDEFINED_REGISTER_NAME,
-    UNBOUNDED_CMP_ERROR
+    UNBOUNDED_CMP_ERROR,
+    CALLING_FUNCTION_WITHOUT_RETURN
 } Error_Type;
 typedef enum {
     False = 0, True = 1
@@ -95,6 +95,7 @@ typedef struct Line {
 } Line;
 typedef struct Label_Token {
     bool called;
+    bool hasReturn;
     String Label_Name;
     Line_Ptr Label_Address;
     Line_Ptr last_caller;

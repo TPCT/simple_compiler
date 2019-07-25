@@ -115,9 +115,7 @@ void lineMaker(String token) {
     line = (Line_Ptr) calloc(1, sizeof(Line));
     line->lineCode = token;
     tokenize(token, line);
-    if (line) {
-        Actual_Lines_tree = addLine(&Actual_Lines_tree, &line);
-    }
+    Actual_Lines_tree = addLine(&Actual_Lines_tree, &line);
 }
 
 void tokenize(String lineString, Line_Ptr line) {
@@ -163,6 +161,8 @@ void tokenize(String lineString, Line_Ptr line) {
             free(token);
         }
         free(lineString);
+    } else {
+        free(line);
     }
 }
 
@@ -333,7 +333,8 @@ void makeLabelToken(Line_Ptr line) {
     line->generalPurposeTokenPtr->Tokens.Label_Token->Next_Label = NULL;
     line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name = strReplace(line->Instruction_String, ":", "");
     line->generalPurposeTokenPtr->Tokens.Label_Token->last_caller = NULL;
-    line->generalPurposeTokenPtr->Tokens.Label_Token->called = 0;
+    line->generalPurposeTokenPtr->Tokens.Label_Token->called = False;
+    line->generalPurposeTokenPtr->Tokens.returnToken->hasReturn = False;
     Last_LABEL = labelTokenPtr;
     addLabel(&labelTokenPtr);
 }
@@ -341,6 +342,7 @@ void makeLabelToken(Line_Ptr line) {
 void makeReturnToken(Line_Ptr line) {
     line->linetype = returnLine;
     line->generalPurposeTokenPtr->Tokens.returnToken = Last_LABEL;
+    line->generalPurposeTokenPtr->Tokens.returnToken->hasReturn = True;
     Last_LABEL = NULL;
 }
 

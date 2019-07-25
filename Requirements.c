@@ -12,9 +12,9 @@ String_Constant ERRORS_TYPES[] = {"SYNTAX ERROR",
                                   "INVALID RETURN TOKEN ERROR",
                                   "DUPLICATED LABEL NAME ERROR",
                                   "REGISTER TYPE ERROR",
-                                  "UNBOUNDED RETURN CALL ERROR",
                                   "UNIDENTIFIED REGISTER NAME ERROR",
-                                  "UNBOUNDED CMP TOKEN ERROR"};
+                                  "UNBOUNDED CMP TOKEN ERROR",
+                                  "CALLING FUNCTION WITHOUT RETURN ERROR"};
 
 
 String strReplace(String_Constant string, String_Constant substr, String_Constant replacement) {
