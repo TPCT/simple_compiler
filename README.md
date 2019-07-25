@@ -2,7 +2,7 @@
 #### THIS IS SIMPLE COMPILER (MODIFIED ASM) USING C LANG.<br />
 #### THIS COMPILER WILL BE USED AS COMPILER OF HOME MADE 16 BIT COMPILER (MACHINE CODE DOESN'T SHOWN HERE) <br />
 #### THIS COMPILER IDEA IS TAKEN FROM CODEWARS ASSEMBLER 2 KATA <a href="https://www.codewars.com/kata/assembler-interpreter-part-ii"> KATA </a><br />
-![alt Program Image](https://ibb.co/gtgjhh7)
+![alt Program Image](https://i.ibb.co/44Nm33f/Screenshot-from-2019-07-24-19-45-00.png)
 #### IF YOU HAVE ANY ISSUES PLEASE CONTACT WITH ME <br />
 #### THIS PROJECT IS STILL UNDER DEVELOPMENT AND TESTING <br />
 # USED SYNTAX (CASE SENSITIVE)<br />
