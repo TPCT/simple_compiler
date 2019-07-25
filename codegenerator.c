@@ -1,5 +1,7 @@
 #include "codegenerator.h"
+#include "tokens.h"
 
+#define GPT (*line)->generalPurposeTokenPtr->Tokens
 void totalCompile(void) {
     Line_Ptr linePtr = Actual_Lines_tree;
     String msgData;
@@ -19,7 +21,7 @@ void totalCompile(void) {
             if (msgData)
                 printf("%s", msgData);
             free(msgData);
-            if (linePtr->generalPurposeTokenPtr->tokenType == END_TOKEN_TYPE)
+            if (linePtr->linetype == endLine)
                 exit(0);
             linePtr = linePtr->Next_Line;
         }
@@ -29,7 +31,7 @@ void totalCompile(void) {
 }
 
 void auCompile(Line_Ptr line) {
-    if (line->generalPurposeTokenPtr->tokenType == AU_TOKEN_TYPE) {
+    if (line->linetype == auLine) {
         GENERAL_PURPOSE_TOKEN_PTR GPT_PTR = line->generalPurposeTokenPtr;
         Au_Token_Ptr auTokenPtr = line->generalPurposeTokenPtr->Tokens.Au_Token;
         switch (GPT_PTR->Tokens.Au_Token->Instruction) {
@@ -119,7 +121,7 @@ void auCompile(Line_Ptr line) {
 }
 
 void cmpCompiler(Line_Ptr line) {
-    if (line->generalPurposeTokenPtr->tokenType == CMP_TOKEN_TYPE) {
+    if (line->linetype == cmpLine) {
         if (line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA
             && line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB) {
             double registerAValue = (double) (line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->Data_Type_Settings
@@ -143,51 +145,52 @@ void cmpCompiler(Line_Ptr line) {
 }
 
 void jmpCompile(Line_Ptr *line) {
-    if ((*line)->generalPurposeTokenPtr->tokenType == JUMP_TOKEN_TYPE) {
-        switch ((*line)->generalPurposeTokenPtr->Tokens.Jump_Token->Instruction) {
+    if ((*line)->linetype == jmpLine) {
+        switch (GPT.Jump_Token->Instruction) {
             case JMP:
-                *line = (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address;
+                *line = GPT.Jump_Token->Line_Address;
                 break;
             case JE:
-                if ((*line)->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val == EQUAL)
-                    *line = (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address;
+                if (GPT.Jump_Token->CMP_Token->CMP_Val == EQUAL)
+                    *line = GPT.Jump_Token->Line_Address;
                 break;
             case JGE:
-                if ((*line)->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val == GREATER_THAN
-                    || (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val == EQUAL)
-                    *line = (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address;
+                if (GPT.Jump_Token->CMP_Token->CMP_Val == GREATER_THAN
+                    || GPT.Jump_Token->CMP_Token->CMP_Val == EQUAL)
+                    *line = GPT.Jump_Token->Line_Address;
                 break;
             case JLE:
-                if ((*line)->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val == LESS_THAN
-                    || (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val == EQUAL)
-                    *line = (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address;
+                if (GPT.Jump_Token->CMP_Token->CMP_Val == LESS_THAN
+                    || GPT.Jump_Token->CMP_Token->CMP_Val == EQUAL)
+                    *line = GPT.Jump_Token->Line_Address;
                 break;
             case JNE:
-                if ((*line)->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val != EQUAL)
-                    *line = (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address;
+                if (GPT.Jump_Token->CMP_Token->CMP_Val != EQUAL)
+                    *line = GPT.Jump_Token->Line_Address;
                 break;
             case JG:
-                if ((*line)->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val == GREATER_THAN)
-                    *line = (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address;
+                if (GPT.Jump_Token->CMP_Token->CMP_Val == GREATER_THAN)
+                    *line = GPT.Jump_Token->Line_Address;
                 break;
             case JL:
-                if ((*line)->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val == LESS_THAN)
-                    *line = (*line)->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address;
+                if (GPT.Jump_Token->CMP_Token->CMP_Val == LESS_THAN)
+                    *line = GPT.Jump_Token->Line_Address;
                 break;
         }
     }
 }
 
 void callCompile(Line_Ptr *line) {
-    if ((*line)->generalPurposeTokenPtr->tokenType == CALL_TOKEN_TYPE)
-        (*line)->generalPurposeTokenPtr->Tokens.Call_Token->isCalling = 1,
-                (*line) = (*line)->generalPurposeTokenPtr->Tokens.Call_Token->Line_Address;
+    if ((*line)->linetype == callLine)
+        *GPT.Call_Token->callLabel = True,
+        *GPT.Call_Token->callLine = *line,
+        (*line) = GPT.Call_Token->labelLine;
 }
 
 void retCompile(Line_Ptr *line) {
-    if ((*line)->generalPurposeTokenPtr->tokenType == RETURN_TOKEN_TYPE
-        && (*line)->generalPurposeTokenPtr->Tokens.Return_Token->callToken->isCalling) {
-        (*line)->generalPurposeTokenPtr->Tokens.Return_Token->callToken->isCalling = 0;
-        *line = (*line)->generalPurposeTokenPtr->Tokens.Return_Token->callToken->associatedLine;
+    if ((*line)->linetype == returnLine
+        && GPT.returnToken->called) {
+        GPT.returnToken->called = False;
+        *line = GPT.returnToken->last_caller;
     }
 }

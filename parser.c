@@ -3,6 +3,7 @@
 static String_Constant reservedWords[] = {"MOV", "ADD", "SUB", "DIV", "MUL", "INC", "DEC",
                                           "JMP", "JNE", "JE", "JGE", "JG", "JLE", "JL",
                                           "CMP", "CALL", "MSG", "RET", "END", NULL};
+#define GPT line->generalPurposeTokenPtr
 
 void parse(void) {
     Line_Ptr linePtr = Actual_Lines_tree;
@@ -16,14 +17,14 @@ void parse(void) {
 
 void checkLabelDuplications(Line_Ptr line) {
     if (!line->Error) {
-        if (line->generalPurposeTokenPtr->tokenType == LABEL_TOKEN_TYPE) {
+        if (line->linetype == labelLine) {
             Label_Token_Ptr labelTokenPtr = Labels_Container;
-            if (line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name) {
+            if (GPT->Tokens.Label_Token->Label_Name) {
                 while (labelTokenPtr) {
-                    if (!strcmp(labelTokenPtr->Label_Name, line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name)
+                    if (!strcmp(labelTokenPtr->Label_Name, GPT->Tokens.Label_Token->Label_Name)
                         &&
                         labelTokenPtr->Label_Address !=
-                        line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Address) {
+                        GPT->Tokens.Label_Token->Label_Address) {
                         line->Error = makeDuplicateLabelError(line->lineCode);
                         break;
                     }
@@ -35,8 +36,7 @@ void checkLabelDuplications(Line_Ptr line) {
 }
 
 void registerNameChecker(Line_Ptr line, Register_Ptr *registerPtr) {
-#define GPT line->generalPurposeTokenPtr
-    if ((GPT->tokenType == AU_TOKEN_TYPE || GPT->tokenType == CMP_TOKEN_TYPE || GPT->tokenType == MSG_TOKEN_TYPE) &&
+    if ((line->linetype == auLine || line->linetype == cmpLine || line->linetype == msgLine) &&
         !line->Error) {
         if (*registerPtr) {
             for (int i = 0; reservedWords[i]; i++) {
@@ -68,8 +68,8 @@ void registerNameChecker(Line_Ptr line, Register_Ptr *registerPtr) {
                 }
             }
         } else {
-            if (GPT->tokenType == AU_TOKEN_TYPE && (GPT->Tokens.Au_Token->Instruction == INC
-                                                    || GPT->Tokens.Au_Token->Instruction == DEC));
+            if (line->linetype == auLine && (GPT->Tokens.Au_Token->Instruction == INC
+                                             || GPT->Tokens.Au_Token->Instruction == DEC));
             else
                 line->Error = makeNullRegisterError(line->lineCode);
         }
@@ -78,7 +78,7 @@ void registerNameChecker(Line_Ptr line, Register_Ptr *registerPtr) {
 
 void labelNameChecker(Line_Ptr line) {
     if (!line->Error) {
-        if (GPT->tokenType == LABEL_TOKEN_TYPE) {
+        if (line->linetype == labelLine) {
             for (int i = 0; reservedWords[i]; i++) {
                 if (!strcmp(GPT->Tokens.Label_Token->Label_Name, reservedWords[i])) {
                     line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Label_Token->Label_Name);
@@ -89,7 +89,7 @@ void labelNameChecker(Line_Ptr line) {
                 line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Label_Token->Label_Name);
                 return;
             }
-        } else if (GPT->tokenType == JUMP_TOKEN_TYPE) {
+        } else if (line->linetype == jmpLine) {
             for (int i = 0; reservedWords[i]; i++) {
                 if (!strcmp(GPT->Tokens.Jump_Token->Label_Name, reservedWords[i])) {
                     line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Jump_Token->Label_Name);
@@ -100,15 +100,15 @@ void labelNameChecker(Line_Ptr line) {
                 line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Jump_Token->Label_Name);
                 return;
             }
-        } else if (GPT->tokenType == CALL_TOKEN_TYPE) {
+        } else if (line->linetype == callLine) {
             for (int i = 0; reservedWords[i]; i++) {
-                if (!strcmp(GPT->Tokens.Call_Token->Label_Name, reservedWords[i])) {
-                    line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Call_Token->Label_Name);
+                if (!strcmp(GPT->Tokens.Call_Token->labelName, reservedWords[i])) {
+                    line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Call_Token->labelName);
                     return;
                 }
             }
-            if (paramsLens(GPT->Tokens.Call_Token->Label_Name) > 1) {
-                line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Call_Token->Label_Name);
+            if (paramsLens(GPT->Tokens.Call_Token->labelName) > 1) {
+                line->Error = makeLabelNameError(line->lineCode, GPT->Tokens.Call_Token->labelName);
                 return;
             }
         }
@@ -116,77 +116,62 @@ void labelNameChecker(Line_Ptr line) {
 }
 
 void lineParamChecker(Line_Ptr line) {
-    switch (line->generalPurposeTokenPtr->tokenType) {
-        case AU_TOKEN_TYPE:
-            if (line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction == INC
-                || line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction == DEC) {
-                if (paramsLens(strdup(line->lineCode)) > 1)
+    switch (line->linetype) {
+        case auLine:
+            if (GPT->Tokens.Au_Token->Instruction == INC
+                || GPT->Tokens.Au_Token->Instruction == DEC) {
+                if (paramsLens(line->lineCode) > 1)
                     line->Error = makeParamError(line->lineCode);
             } else {
-                if (paramsLens(strdup(line->lineCode)) > 2)
+                if (paramsLens(line->lineCode) > 2)
                     line->Error = makeParamError(line->lineCode);
             }
-            if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType == TEMP_REGISTER) {
+            if (GPT->Tokens.Au_Token->RegisterA->registerType == TEMP_REGISTER) {
                 line->Error = makeRegisterTypeError("REGISTER A MUST BE A REAL REGISTER NOT A NUMBER",
-                                                    line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType);
+                                                    GPT->Tokens.Au_Token->RegisterA->registerType);
                 break;
             }
-            registerNameChecker(line, &line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA);
-            registerNameChecker(line, &line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB);
+            registerNameChecker(line, &GPT->Tokens.Au_Token->RegisterA);
+            registerNameChecker(line, &GPT->Tokens.Au_Token->RegisterB);
             break;
-        case CMP_TOKEN_TYPE:
-            if (paramsLens(strdup(line->lineCode)) > 2)
+        case cmpLine:
+            if (paramsLens(line->lineCode) > 2)
                 line->Error = makeParamError(line->lineCode);
-            registerNameChecker(line, &line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA);
-            registerNameChecker(line, &line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB);
+            registerNameChecker(line, &GPT->Tokens.CMP_Token->RegisterA);
+            registerNameChecker(line, &GPT->Tokens.CMP_Token->RegisterB);
             break;
-        case JUMP_TOKEN_TYPE:
-            if (paramsLens(strdup(line->lineCode)) > 1) {
+        case jmpLine:
+            if (paramsLens(line->lineCode) > 1) {
                 line->Error = makeSyntaxError(line->lineCode);
                 break;
             }
-            if (!line->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address) {
+            if (!GPT->Tokens.Jump_Token->isSet) {
                 line->Error = makeUnboundedJumpError(line->lineCode);
                 break;
             }
-            if (!line->generalPurposeTokenPtr->Tokens.CMP_Token)
+            if (!GPT->Tokens.CMP_Token)
                 line->Error = makeUnboundedCmpError(line->lineCode);
             break;
-        case END_TOKEN_TYPE:
-            if (paramsLens(strdup(line->lineCode)) > 1)
-                line->Error = makeSyntaxError(line->lineCode);
-            break;
-        case RETURN_TOKEN_TYPE:
-            if (paramsLens(strdup(line->lineCode)) > 1) {
+        case callLine:
+            if (paramsLens(line->lineCode) > 1) {
                 line->Error = makeSyntaxError(line->lineCode);
                 break;
             }
-            if (!line->generalPurposeTokenPtr->Tokens.Return_Token->callToken)
-                line->Error = makeInvalidReturnError(line->lineCode);
-            break;
-        case CALL_TOKEN_TYPE:
-            line->generalPurposeTokenPtr->Tokens.Call_Token->isCalling = 0;
-            if (paramsLens(strdup(line->lineCode)) > 1) {
-                line->Error = makeSyntaxError(line->lineCode);
-                break;
-            }
-            if (!line->generalPurposeTokenPtr->Tokens.Call_Token->RET_TOKEN) {
-                line->Error = makeReturnTokenError(line->lineCode);
-                break;
-            }
-            if (!line->generalPurposeTokenPtr->Tokens.Call_Token->Line_Address)
+            if (!GPT->Tokens.Call_Token->isSet) {
                 line->Error = makeUnboundedCallError(line->lineCode);
-            break;
-        case LABEL_TOKEN_TYPE:
-            if (paramsLens(strdup(line->lineCode)) > 1) {
+                break;
+            }
+        case labelLine:
+            if (paramsLens(line->lineCode) > 1) {
                 line->Error = makeSyntaxError(line->lineCode);
                 break;
             }
             break;
-        case MSG_TOKEN_TYPE: {
-            Msg_String_Ptr msgStringPtr = line->generalPurposeTokenPtr->Tokens.MSG_Token->String_Tree;
+        case msgLine: {
+            Msg_String_Ptr msgStringPtr = GPT->Tokens.MSG_Token->String_Tree;
+            MSG_Register_Ptr registerPtr = NULL;
             while (msgStringPtr) {
-                unsigned length = stringTrim(&msgStringPtr->MSG_TOKEN_STRING);
+                unsigned length = strlen(msgStringPtr->MSG_TOKEN_STRING);
                 if (length >= 2 && *(msgStringPtr->MSG_TOKEN_STRING) == '\'' &&
                     *(msgStringPtr->MSG_TOKEN_STRING + length - 1) == '\'') {
                 } else {
@@ -196,15 +181,27 @@ void lineParamChecker(Line_Ptr line) {
                 msgStringPtr = msgStringPtr->Next_String;
             }
             if (!line->Error) {
-                MSG_Register_Ptr registerPtr = line->generalPurposeTokenPtr->Tokens.MSG_Token->Registers_Tree;
+                registerPtr = GPT->Tokens.MSG_Token->Registers_Tree;
                 while (registerPtr) {
-                    registerNameChecker(line, &registerPtr->REGISTER);
+                    registerNameChecker(line, &(registerPtr->REGISTER));
                     registerPtr = registerPtr->NEXT_REGISTER;
                 }
             }
         }
             break;
-        case UNIDENTIFIED_TOKEN_TYPE:
+        case returnLine:
+            if (paramsLens(line->lineCode) > 1) {
+                line->Error = makeSyntaxError(line->lineCode);
+                break;
+            }
+            if (!GPT->Tokens.returnToken->Label_Address)
+                line->Error = makeInvalidReturnError(line->lineCode);
+            break;
+        case endLine:
+            if (paramsLens(line->lineCode) > 1)
+                line->Error = makeSyntaxError(line->lineCode);
+            break;
+        case undefinedLine:
             line->Error = makeSyntaxError(line->lineCode);
             break;
     }
@@ -213,10 +210,13 @@ void lineParamChecker(Line_Ptr line) {
 
 unsigned paramsLens(String code) {
     unsigned paramsLen = 0;
-    while (code) {
-        strsep(&code, ",");
-        paramsLen++;
-    }
+    String token;
+    do {
+        token = extractParameter(&code);
+        if (token)
+            paramsLen++;
+        free(token);
+    } while (code && token);
     return paramsLen;
 }
 
@@ -375,19 +375,3 @@ Error_Ptr makeInvalidReturnError(String lineCode) {
     Error_Counter++;
     return error;
 }
-
-Error_Ptr makeReturnTokenError(String lineCode) {
-    Error_Ptr error = (Error_Ptr) malloc(sizeof(Error));
-    error->errorType = UNBOUNDED_RETURN_CALL_ERROR;
-    unsigned length = snprintf(NULL, 0, "UNBOUNDED RETURN CALL ERROR AT LINE %s",
-                               lineCode);
-    String errorMsg = malloc(sizeof(char) * (length + 1));
-    snprintf(errorMsg, length + 1, "UNBOUNDED RETURN CALL ERROR AT LINE %s",
-             lineCode);
-    error->Error_MSG = errorMsg;
-    Error_Counter++;
-    return error;
-}
-
-
-

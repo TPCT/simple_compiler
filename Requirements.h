@@ -13,12 +13,12 @@ extern String_Constant ERRORS_TYPES[];
 
 Register_Ptr searchRegister(Register_Ptr *registerPtr);
 
-String strReplace(String string, String substr, String replacement);
+String strReplace(String_Constant string, String_Constant substr, String_Constant replacement);
 
 
 String extractLabel(String_Constant line);
 
-String extractCmd(String *line);
+String extractCmd(String *line, unsigned char *isLabel);
 
 String extractParameter(String *line);
 
@@ -31,7 +31,6 @@ void printLine(Line_Ptr line);
 void printRegister(Register_Ptr reg);
 void printAllStackCode(Line_Ptr line);
 
-unsigned stringTrim(String *lineStringPtr);
 
 unsigned beautify(String *code);
 

@@ -14,14 +14,13 @@ typedef struct GENERAL_PURPOSE_TOKEN *GENERAL_PURPOSE_TOKEN_PTR;
 typedef struct Line *Line_Ptr;
 typedef struct Error *Error_Ptr;
 typedef struct Call_Token *Call_Token_Ptr;
-typedef struct Ret_Token *Return_Token_Ptr;
 typedef struct Calls_Tree *Calls_Tree_Ptr;
 
-typedef enum Token_Type {
-    AU_TOKEN_TYPE, JUMP_TOKEN_TYPE, LABEL_TOKEN_TYPE,
-    CALL_TOKEN_TYPE, MSG_TOKEN_TYPE, RETURN_TOKEN_TYPE,
-    END_TOKEN_TYPE, CMP_TOKEN_TYPE, UNIDENTIFIED_TOKEN_TYPE
-} Token_Type;
+typedef enum lineType {
+    auLine = 1, jmpLine, labelLine,
+    callLine, msgLine, returnLine,
+    endLine, cmpLine, undefinedLine
+} lineType;
 typedef enum Error_Type {
     SYNTAX_ERROR,
     NAMING_ERROR,
@@ -36,6 +35,9 @@ typedef enum Error_Type {
     UNDEFINED_REGISTER_NAME,
     UNBOUNDED_CMP_ERROR
 } Error_Type;
+typedef enum {
+    False = 0, True = 1
+} bool;
 typedef enum Au_Instruction {
     MOV, ADD, SUB, DIV, MUL, INC, DEC
 } Au_Instructions;
@@ -76,6 +78,7 @@ typedef struct CMP_Token {
     Cmp_Instruction CMP_Val;
 } CMP_Token;
 typedef struct Jump_Token {
+    bool isSet;
     Jump_Instruction Instruction;
     Line_Ptr Line_Address;
     String Label_Name;
@@ -84,14 +87,17 @@ typedef struct Jump_Token {
 } Jump_Token;
 typedef struct Line {
     String lineCode;
+    lineType linetype;
     String Instruction_String;
     GENERAL_PURPOSE_TOKEN_PTR generalPurposeTokenPtr;
     Error_Ptr Error;
     Line_Ptr Next_Line;
 } Line;
 typedef struct Label_Token {
+    bool called;
     String Label_Name;
     Line_Ptr Label_Address;
+    Line_Ptr last_caller;
     Label_Token_Ptr Next_Label;
 } Label_Token;
 typedef struct MSG_REGISTER {
@@ -113,24 +119,18 @@ typedef struct Error {
     Error_Type errorType;
 } Error;
 typedef struct Call_Token {
-    unsigned char isCalling;
-    Line_Ptr associatedLine;
-    Line_Ptr Line_Address;
-    String Label_Name;
-    Return_Token_Ptr RET_TOKEN;
-    Call_Token_Ptr Next_Call;
+    bool isSet;
+    Line_Ptr *callLine;
+    Line_Ptr labelLine;
+    String labelName;
+    bool *callLabel;
 } Call_Token;
 typedef struct Calls_Tree {
     Call_Token_Ptr call;
     Calls_Tree_Ptr Next_Node;
 } Calls_Tree;
-typedef struct Ret_Token {
-    String Label_Name;
-    Line_Ptr Line_Address;
-    Call_Token_Ptr callToken;
-} Ret_Token;
+
 typedef struct GENERAL_PURPOSE_TOKEN {
-    Token_Type tokenType;
     union Tokens {
         Au_Token_Ptr Au_Token;
         Jump_Token_Ptr Jump_Token;
@@ -138,7 +138,7 @@ typedef struct GENERAL_PURPOSE_TOKEN {
         Msg_Token_Ptr MSG_Token;
         CMP_Token_Ptr CMP_Token;
         Call_Token_Ptr Call_Token;
-        Return_Token_Ptr Return_Token;
+        Label_Token_Ptr returnToken;
     } Tokens;
 } GENERAL_PURPOSE_TOKEN;
 #endif

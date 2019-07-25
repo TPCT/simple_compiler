@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "tokens.h"
 
 static String AU_KEYWORDS[] = {"MOV", "ADD", "SUB", "DIV", "MUL", "INC", "DEC", NULL};
 static String JUMP_KEYWORDS[] = {"JMP", "JNE", "JE", "JGE", "JG", "JLE", "JL", NULL};
@@ -17,6 +18,58 @@ void codeReader(String code) {
     } while (code);
     assignLabelsToJumps();
     assignLabelsToCalls();
+}
+
+void assignLabelsToJumps(void) {
+    Label_Token_Ptr labelTokenPtr = Labels_Container;
+    Jump_Token_Ptr *tempPtr = &TEMP_JUMPS_CONTAINER;
+    if (!tempPtr)
+        return;
+    while (labelTokenPtr) {
+        if (!*tempPtr)
+            return;
+        while (*tempPtr) {
+            if (!strcmp(labelTokenPtr->Label_Name, (*tempPtr)->Label_Name)) {
+                (*tempPtr)->isSet = True;
+                (*tempPtr)->Line_Address = labelTokenPtr->Label_Address;
+                (*tempPtr) = (*tempPtr)->Next_Jump;
+                continue;
+            }
+            tempPtr = &(*tempPtr)->Next_Jump;
+        }
+        tempPtr = &TEMP_JUMPS_CONTAINER;
+        labelTokenPtr = labelTokenPtr->Next_Label;
+    }
+}
+
+void assignLabelsToCalls(void) {
+    Label_Token_Ptr labelTokenPtr = Labels_Container;
+    Calls_Tree_Ptr *tempPtr = &TEMP_CALLS_CONTAINER;
+    Calls_Tree_Ptr lastCall = NULL;
+    while (labelTokenPtr && *tempPtr) {
+        while (*tempPtr) {
+            if (!strcmp(labelTokenPtr->Label_Name, (*tempPtr)->call->labelName)) {
+                (*tempPtr)->call->labelLine = labelTokenPtr->Label_Address;
+                (*tempPtr)->call->isSet = True;
+                (*tempPtr)->call->callLine = &labelTokenPtr->last_caller;
+                (*tempPtr)->call->callLabel = &labelTokenPtr->called;
+                *LAST_BOUNDED_CALL_CONTAINER = (*tempPtr)->call;
+                if (lastCall && lastCall->Next_Node) {
+                    lastCall->Next_Node = (*tempPtr)->Next_Node;
+                    free(*tempPtr);
+                    lastCall = lastCall->Next_Node;
+                    tempPtr = &lastCall;
+                    continue;
+                }
+                tempPtr = &(*tempPtr)->Next_Node;
+                continue;
+            }
+            lastCall = *tempPtr;
+            tempPtr = &(*tempPtr)->Next_Node;
+        }
+        tempPtr = &TEMP_CALLS_CONTAINER;
+        labelTokenPtr = labelTokenPtr->Next_Label;
+    }
 }
 
 void addJump(Jump_Token_Ptr *savingPtr, Jump_Token_Ptr *jumpPtr) {
@@ -38,7 +91,7 @@ void addJump(Jump_Token_Ptr *savingPtr, Jump_Token_Ptr *jumpPtr) {
 void addCall(Call_Token_Ptr *savingPtr, Call_Token_Ptr *callPtr) {
     Calls_Tree_Ptr *installingContainer = &TEMP_CALLS_CONTAINER;
     while (*installingContainer) {
-        if (!strcmp((*installingContainer)->call->Label_Name, (*callPtr)->Label_Name)) {
+        if (!strcmp((*installingContainer)->call->labelName, (*callPtr)->labelName)) {
             *savingPtr = (*installingContainer)->call,
                     free(*callPtr);
             break;
@@ -62,98 +115,54 @@ void lineMaker(String token) {
     line = (Line_Ptr) calloc(1, sizeof(Line));
     line->lineCode = token;
     tokenize(token, line);
-    Actual_Lines_tree = addLine(&Actual_Lines_tree, &line);
-}
-
-void tokenize(String lineStringPtr, Line_Ptr line) {
-    char isLbl = 0;
-    if (lineStringPtr) {
-        String token;
-        if (!strstr(lineStringPtr, "MSG") && !strstr(lineStringPtr, "'") && strstr(lineStringPtr, ":")) {
-            token = extractLabel(lineStringPtr);
-            if (token)
-                isLbl = 1;
-        }
-        else
-            token = extractCmd(&lineStringPtr);
-        if (!token)
-            return;
-        line->Instruction_String = token;
-        line->generalPurposeTokenPtr = (GENERAL_PURPOSE_TOKEN_PTR) calloc(1, sizeof(GENERAL_PURPOSE_TOKEN));
-        line->Error = NULL;
-        for (char i = 0; AU_KEYWORDS[i] || JUMP_KEYWORDS[i < 7 ? i : 7]; i++) {
-            if (!strcmp(AU_KEYWORDS[i], token)) {
-                makeAuToken(line, lineStringPtr, i);
-                return;
-            } else if ((i < 7) && !strcmp(JUMP_KEYWORDS[i], token)) {
-                makeJumpToken(line, lineStringPtr, i);
-                return;
-            }
-        }
-        if (!strcmp(token, CALL))
-            makeCallToken(line, lineStringPtr);
-        else if (!strcmp(token, CMP))
-            makeCmpToken(line, lineStringPtr);
-        else if (!strcmp(token, END))
-            line->generalPurposeTokenPtr->tokenType = END_TOKEN_TYPE;
-        else if (!strcmp(token, RET))
-            makeReturnToken(line);
-        else if (!strcmp(token, MSG)) {
-            makeMsgToken(line, lineStringPtr);
-        } else if (isLbl) {
-            makeLabelToken(line);
-        }
-        else
-            makeUndefinedToken(line);
-        line->Next_Line = NULL;
+    if (line) {
+        Actual_Lines_tree = addLine(&Actual_Lines_tree, &line);
     }
 }
 
-void assignLabelsToJumps(void) {
-    Label_Token_Ptr labelTokenPtr = Labels_Container;
-    Jump_Token_Ptr *tempPtr = &TEMP_JUMPS_CONTAINER;
-    if (!tempPtr)
-        return;
-    while (labelTokenPtr) {
-        if (!*tempPtr)
-            return;
-        while (*tempPtr) {
-            if (!strcmp(labelTokenPtr->Label_Name, (*tempPtr)->Label_Name)) {
-                (*tempPtr)->Line_Address = labelTokenPtr->Label_Address;
-                (*tempPtr) = (*tempPtr)->Next_Jump;
-                continue;
-            }
-            tempPtr = &(*tempPtr)->Next_Jump;
-        }
-        tempPtr = &TEMP_JUMPS_CONTAINER;
-        labelTokenPtr = labelTokenPtr->Next_Label;
-    }
-}
-
-void assignLabelsToCalls(void) {
-    Label_Token_Ptr labelTokenPtr = Labels_Container;
-    Calls_Tree_Ptr *tempPtr = &TEMP_CALLS_CONTAINER;
-    Calls_Tree_Ptr lastcall = NULL;
-    while (labelTokenPtr && *tempPtr) {
-        while (*tempPtr) {
-            if (!strcmp(labelTokenPtr->Label_Name, (*tempPtr)->call->Label_Name)) {
-                (*tempPtr)->call->Line_Address = labelTokenPtr->Label_Address;
-                *LAST_BOUNDED_CALL_CONTAINER = (*tempPtr)->call;
-                if (lastcall && lastcall->Next_Node) {
-                    lastcall->Next_Node = (*tempPtr)->Next_Node;
-                    free(*tempPtr);
-                    lastcall = lastcall->Next_Node;
-                    tempPtr = &lastcall;
-                    continue;
+void tokenize(String lineString, Line_Ptr line) {
+    if (lineString) {
+        unsigned char isLbl = 0;
+        String token = NULL;
+        line->lineCode = strdup(lineString);
+        token = extractCmd(&lineString, &isLbl);
+        if (token) {
+            line->Instruction_String = strdup(token);
+            line->generalPurposeTokenPtr = (GENERAL_PURPOSE_TOKEN_PTR) calloc(1, sizeof(GENERAL_PURPOSE_TOKEN));
+            line->Error = NULL;
+            if (!isLbl) {
+                for (char i = 0; AU_KEYWORDS[i] || JUMP_KEYWORDS[i < 7 ? i : 7]; i++) {
+                    if (!strcmp(AU_KEYWORDS[i], line->Instruction_String)) {
+                        makeAuToken(line, lineString, i);
+                        free(token);
+                        free(lineString);
+                        return;
+                    } else if ((i < 7) && !strcmp(JUMP_KEYWORDS[i], line->Instruction_String)) {
+                        makeJumpToken(line, lineString, i);
+                        free(token);
+                        free(lineString);
+                        return;
+                    }
                 }
-                tempPtr = &(*tempPtr)->Next_Node;
-                continue;
             }
-            lastcall = *tempPtr;
-            tempPtr = &(*tempPtr)->Next_Node;
+            if (!strcmp(token, CALL))
+                makeCallToken(line, lineString);
+            else if (!strcmp(token, CMP))
+                makeCmpToken(line, lineString);
+            else if (!strcmp(token, END))
+                line->linetype = endLine;
+            else if (!strcmp(token, RET))
+                makeReturnToken(line);
+            else if (!strcmp(token, MSG)) {
+                makeMsgToken(line, lineString);
+            } else if (isLbl) {
+                makeLabelToken(line);
+            } else
+                makeUndefinedToken(line);
+            line->Next_Line = NULL;
+            free(token);
         }
-        tempPtr = &TEMP_CALLS_CONTAINER;
-        labelTokenPtr = labelTokenPtr->Next_Label;
+        free(lineString);
     }
 }
 
@@ -177,62 +186,69 @@ void actualRegisterPtrAdd(Register_Ptr *savingRegister, Register_Ptr *registerPt
         *savingRegister = tempRegister;
 }
 
-void makeCallToken(Line_Ptr line, String lineStringPtr) {
+void makeCallToken(Line_Ptr line, String_Constant lineStringPtr) {
     Call_Token_Ptr callTokenPtr = (Call_Token_Ptr) calloc(1, sizeof(Call_Token));
-    callTokenPtr->RET_TOKEN = NULL;
-    callTokenPtr->associatedLine = line;
-    callTokenPtr->Label_Name = strsep(&lineStringPtr, " ");
-    line->generalPurposeTokenPtr->tokenType = CALL_TOKEN_TYPE;
+    String tempData = strdup(lineStringPtr);
+    callTokenPtr->isSet = False;
+    callTokenPtr->labelName = extractCmd(&tempData, NULL);
+    callTokenPtr->callLine = NULL;
+    callTokenPtr->labelLine = NULL;
+    callTokenPtr->callLabel = NULL;
+    line->linetype = callLine;
     addCall(&line->generalPurposeTokenPtr->Tokens.Call_Token, &callTokenPtr);
+    free(tempData);
 }
 
-void makeCmpToken(Line_Ptr line, String lineStringPtr) {
+void makeCmpToken(Line_Ptr line, String_Constant lineStringPtr) {
+    String tempData = strdup(lineStringPtr);
     LAST_CMP = (CMP_Token_Ptr) calloc(1, sizeof(CMP_Token));
     LAST_CMP->CMP_Val = EQUAL;
     Register_Ptr *registerPtr = (Register_Ptr *) malloc(sizeof(Register_Ptr));
-    *registerPtr = extractRegister(&lineStringPtr);
+    *registerPtr = extractRegister(&tempData);
     Register_Ptr tempRegister = searchRegister(registerPtr);
     LAST_CMP->RegisterA = tempRegister;
     if (!*registerPtr || (*registerPtr && (*registerPtr)->registerType == TEMP_REGISTER));
     else
         LAST_CMP->RegisterA->registerType = UNDEFINED_REGISTER;
-    *registerPtr = extractRegister(&lineStringPtr);
+    *registerPtr = extractRegister(&tempData);
     tempRegister = searchRegister(registerPtr);
     LAST_CMP->RegisterB = tempRegister;
     if (!*registerPtr || (*registerPtr && (*registerPtr)->registerType == TEMP_REGISTER));
     else
         LAST_CMP->RegisterB->registerType = UNDEFINED_REGISTER;
     free(registerPtr);
-    line->generalPurposeTokenPtr->tokenType = CMP_TOKEN_TYPE;
+    line->linetype = cmpLine;
     line->generalPurposeTokenPtr->Tokens.CMP_Token = LAST_CMP;
+    free(tempData);
 }
 
-void makeMsgToken(Line_Ptr line, String lineStringPtr) {
+void makeMsgToken(Line_Ptr line, String_Constant lineStringPtr) {
+    String tempData = strdup(lineStringPtr);
     Msg_Token_Ptr msgTokenPtr = (Msg_Token_Ptr) calloc(1, sizeof(Msg_Token));
     msgTokenPtr->String_Tree = NULL;
     msgTokenPtr->Registers_Tree = NULL;
     Register_Ptr tempRegister = NULL;
     Msg_String_Ptr *tempMsgStringPtr = &msgTokenPtr->String_Tree;
     MSG_Register_Ptr *msgRegisterPtr = &msgTokenPtr->Registers_Tree;
-    msgTokenPtr->MSG_BODY = lineStringPtr;
+    msgTokenPtr->MSG_BODY = strdup(lineStringPtr);
     String token = NULL;
     String tempToken = NULL;
     unsigned int length = 0;
     do {
-        token = extractParameter(&lineStringPtr);
+        token = extractParameter(&tempData);
         if (!token)
             break;
         length = strlen(token);
         if (*token == '\'' || *(token + length - 1) == '\'') {
             *tempMsgStringPtr = (Msg_String_Ptr) calloc(1, sizeof(MSG_STRING));
             (*tempMsgStringPtr)->MSG_TOKEN_STRING = strdup(token);
-            tempToken = token;
-            token = strReplace(token, "'", "");
-            (*tempMsgStringPtr)->message_string = strdup(token);
+            tempToken = strReplace(token, "'", "");
+            (*tempMsgStringPtr)->message_string = strdup(tempToken);
+            free(tempToken);
             (*tempMsgStringPtr)->Next_String = NULL;
             tempMsgStringPtr = &(*tempMsgStringPtr)->Next_String;
         } else {
-            (*msgRegisterPtr) = (MSG_Register_Ptr) malloc(sizeof(MSG_REGISTER));
+            (*msgRegisterPtr) = (MSG_Register_Ptr) calloc(1, sizeof(MSG_REGISTER));
             (*msgRegisterPtr)->REGISTER = extractRegister(&token);
             tempRegister = searchRegister(&(*msgRegisterPtr)->REGISTER);
             if (!(*msgRegisterPtr)->REGISTER)
@@ -242,41 +258,44 @@ void makeMsgToken(Line_Ptr line, String lineStringPtr) {
             msgRegisterPtr = &(*msgRegisterPtr)->NEXT_REGISTER;
         }
         free(token);
-        free(tempToken);
-    } while (*lineStringPtr);
-    line->generalPurposeTokenPtr->tokenType = MSG_TOKEN_TYPE;
+    } while (tempData);
+    line->linetype = msgLine;
     line->generalPurposeTokenPtr->Tokens.MSG_Token = msgTokenPtr;
+    free(tempData);
 }
 
-void makeAuToken(Line_Ptr line, String lineStringPtr, Au_Instructions i) {
+void makeAuToken(Line_Ptr line, String_Constant lineStringPtr, Au_Instructions i) {
     Au_Token_Ptr auTokenPtr = (Au_Token_Ptr) calloc(1, sizeof(Au_Token));
-    line->generalPurposeTokenPtr->tokenType = AU_TOKEN_TYPE;
+    String tempData = strdup(lineStringPtr);
+    line->linetype = auLine;
     line->generalPurposeTokenPtr->Tokens.Au_Token = auTokenPtr;
     line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction = i;
     if (line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction == MOV) {
-        makeRegister(&auTokenPtr->RegisterA, &lineStringPtr);
-        makeRegister(&auTokenPtr->RegisterB, &lineStringPtr);
+        makeRegister(&auTokenPtr->RegisterA, &tempData);
+        makeRegister(&auTokenPtr->RegisterB, &tempData);
         if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType != TEMP_REGISTER)
             line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType = SAVED_REGISTER;
     } else if (line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction == INC
                || line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction == DEC) {
-        specialMakeRegister(&auTokenPtr->RegisterA, &lineStringPtr);
+        specialMakeRegister(&auTokenPtr->RegisterA, &tempData);
         auTokenPtr->RegisterB = NULL;
     } else {
-        specialMakeRegister(&auTokenPtr->RegisterA, &lineStringPtr);
-        specialMakeRegister(&auTokenPtr->RegisterB, &lineStringPtr);
+        specialMakeRegister(&auTokenPtr->RegisterA, &tempData);
+        specialMakeRegister(&auTokenPtr->RegisterB, &tempData);
     }
+    free(tempData);
 }
 
 void makeJumpToken(Line_Ptr line, String lineStringPtr, Jump_Instruction i) {
-    assignLabelsToJumps();
+    //assignLabelsToJumps();
     lineStringPtr = strReplace(lineStringPtr, ",", "");
     Jump_Token_Ptr jumpTokenPtr = (Jump_Token_Ptr) calloc(1, sizeof(Jump_Token));
-    jumpTokenPtr->Label_Name = strsep(&lineStringPtr, " ");
+    jumpTokenPtr->Label_Name = extractCmd(&lineStringPtr, NULL);
     jumpTokenPtr->Instruction = i;
     jumpTokenPtr->CMP_Token = LAST_CMP;
-    line->generalPurposeTokenPtr->tokenType = JUMP_TOKEN_TYPE;
+    line->linetype = jmpLine;
     addJump(&line->generalPurposeTokenPtr->Tokens.Jump_Token, &jumpTokenPtr);
+    free(lineStringPtr);
 }
 
 void specialMakeRegister(Register_Ptr *regPtr, String *code) {
@@ -303,42 +322,26 @@ void makeRegister(Register_Ptr *regPtr, String *code) {
 }
 
 void makeUndefinedToken(Line_Ptr line) {
-    line->generalPurposeTokenPtr->tokenType = UNIDENTIFIED_TOKEN_TYPE;
+    line->linetype = undefinedLine;
 }
 
 void makeLabelToken(Line_Ptr line) {
     Label_Token_Ptr labelTokenPtr = (Label_Token_Ptr) calloc(1, sizeof(Label_Token));
-    line->generalPurposeTokenPtr->tokenType = LABEL_TOKEN_TYPE;
+    line->linetype = labelLine;
     line->generalPurposeTokenPtr->Tokens.Label_Token = labelTokenPtr;
     line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Address = line;
     line->generalPurposeTokenPtr->Tokens.Label_Token->Next_Label = NULL;
-    line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name = line->Instruction_String;
-    line->Instruction_String = (String) calloc(strlen(line->Instruction_String) + 2, sizeof(char));
-    strcat(line->Instruction_String, ":");
+    line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name = strReplace(line->Instruction_String, ":", "");
+    line->generalPurposeTokenPtr->Tokens.Label_Token->last_caller = NULL;
+    line->generalPurposeTokenPtr->Tokens.Label_Token->called = 0;
     Last_LABEL = labelTokenPtr;
     addLabel(&labelTokenPtr);
 }
 
 void makeReturnToken(Line_Ptr line) {
-    assignLabelsToCalls();
-    Return_Token_Ptr returnTokenPtr = (Return_Token_Ptr) malloc(sizeof(Ret_Token));
-    if (Last_LABEL) {
-        returnTokenPtr->Label_Name = Last_LABEL->Label_Name;
-        Call_Token_Ptr *callTokenPtr = &Bounded_Calls_Container;
-        while (*callTokenPtr) {
-            if (!strcmp((*callTokenPtr)->Label_Name, returnTokenPtr->Label_Name))
-                Last_LABEL = NULL,
-                returnTokenPtr->callToken = *callTokenPtr,
-                returnTokenPtr->callToken->RET_TOKEN = returnTokenPtr;
-            callTokenPtr = &(*callTokenPtr)->Next_Call;
-        }
-    } else {
-        returnTokenPtr->Label_Name = NULL;
-        returnTokenPtr->callToken = NULL;
-    }
-    line->generalPurposeTokenPtr->tokenType = RETURN_TOKEN_TYPE;
-    line->generalPurposeTokenPtr->Tokens.Return_Token = returnTokenPtr;
-    returnTokenPtr->Line_Address = line;
+    line->linetype = returnLine;
+    line->generalPurposeTokenPtr->Tokens.returnToken = Last_LABEL;
+    Last_LABEL = NULL;
 }
 
 Register_Ptr extractRegister(String *code) {

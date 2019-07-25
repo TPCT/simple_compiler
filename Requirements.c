@@ -1,4 +1,5 @@
 #include "Requirements.h"
+#include "tokens.h"
 
 String_Constant CMP_RETURNS[] = {"EQUAL", "GREATER THAN", "LESS THAN"};
 String_Constant Register_TYPES[] = {"SAVED REGISTER", "UNDEFINED REGISTER", "TEMP REGISTER"};
@@ -15,7 +16,8 @@ String_Constant ERRORS_TYPES[] = {"SYNTAX ERROR",
                                   "UNIDENTIFIED REGISTER NAME ERROR",
                                   "UNBOUNDED CMP TOKEN ERROR"};
 
-String strReplace(String string, String substr, String replacement) {
+
+String strReplace(String_Constant string, String_Constant substr, String_Constant replacement) {
     char *tok = NULL;
     char *newstr = NULL;
     char *oldstr = NULL;
@@ -46,27 +48,47 @@ String strReplace(String string, String substr, String replacement) {
     return newstr;
 }
 
-String extractCmd(String *line) {
+String extractCmd(String *line, unsigned char *isLabel) {
     if (!line || !*line || !**line) {
         if (line && *line && !**line)
             *line = NULL;
         return NULL;
     }
-    unsigned int max_size = 10;
-    String cmd = (String) calloc(max_size, sizeof(char));
-    for (int i = 0; *(*line); i++) {
-        if (*(*line) == ' ') {
-            (*line)++;
+    unsigned int maxSize = 10;
+    unsigned int length = 0;
+    unsigned int i = 0, j = 0;
+    String label = extractLabel((String_Constant) *line);
+    if (label) {
+        if (isLabel)
+            *isLabel = 1;
+        return label;
+    }
+    String tempLine = strdup(*line);
+    String cmd = (String) calloc(maxSize, sizeof(char));
+    for (; *(tempLine + j); i++) {
+        if (*(tempLine + j) == ' ') {
+            j++;
+            free(*line);
+            length = strlen(tempLine + j);
+            *line = (String) calloc(length + 1, sizeof(char));
+            strcpy(*line, tempLine + j);
+            free(tempLine);
             *(cmd + i) = '\0';
             return cmd;
         } else {
-            if (i == max_size - 2) {
-                max_size += 10;
-                cmd = (String) realloc(cmd, sizeof(char) * (max_size));
+            if (i == maxSize - 2) {
+                maxSize += 10;
+                cmd = (String) realloc(cmd, sizeof(char) * (maxSize));
             }
-            *(cmd + i) = *((*line)++);
+            *(cmd + i) = *(tempLine + j++);
         }
     }
+    free(*line);
+    length = strlen(tempLine + j);
+    *line = (String) calloc(length + 1, sizeof(char));
+    strcpy(*line, tempLine + j);
+    free(tempLine);
+    *(cmd + i) = '\0';
     return cmd;
 }
 
@@ -79,8 +101,8 @@ String extractParameter(String *line) {
     unsigned long long maxSize = 10;
     unsigned char isString = 0;
     unsigned long long i = 0, j = 0;
-    String tempLine = strdup(*line);
 
+    String tempLine = strdup(*line);
     String Parameter = (String) calloc(maxSize, sizeof(char));
     for (; *(tempLine + j); i++) {
         if (i == maxSize - 2) {
@@ -122,7 +144,7 @@ String extractParameter(String *line) {
 }
 
 String extractMsg(Line_Ptr line) {
-    if (line->generalPurposeTokenPtr->tokenType == MSG_TOKEN_TYPE) {
+    if (line->linetype == msgLine) {
         String tempMsg = strdup(line->generalPurposeTokenPtr->Tokens.MSG_Token->MSG_BODY);
         Msg_String_Ptr stringTree = line->generalPurposeTokenPtr->Tokens.MSG_Token->String_Tree;
         MSG_Register_Ptr registerTree = line->generalPurposeTokenPtr->Tokens.MSG_Token->Registers_Tree;
@@ -141,8 +163,10 @@ String extractMsg(Line_Ptr line) {
                 msgText = (String) calloc(maxSize, sizeof(char));
                 if (temp_string)
                     strcpy(msgText, temp_string);
+                String tempData = strReplace(stringTree->message_string, "\\n", "\n");
+                strcat(msgText, tempData);
+                free(tempData);
                 free(temp_string);
-                msgText = strcat(msgText, strReplace(stringTree->message_string, "\\n", "\n"));
                 stringTree = stringTree->Next_String;
                 free(token);
             } else if (token && *token != '\'') {
@@ -163,6 +187,7 @@ String extractMsg(Line_Ptr line) {
                 free(token);
             }
         } while (token);
+        free(tempMsg);
         return msgText;
     } else
         return NULL;
@@ -222,7 +247,7 @@ String extractLabel(String_Constant line) {
     unsigned long long i = 0, j = 0;
     String Parameter = (String) calloc(maxSize, sizeof(char));
     for (; *(line + j); i++) {
-        if (i == maxSize - 2)
+        if (i == maxSize - 4)
             maxSize += 10,
                     Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
         if (*(line + j) != ':') {
@@ -234,6 +259,7 @@ String extractLabel(String_Constant line) {
         } else {
             j++;
             if (!*(line + j)) {
+                *(Parameter + i++) = ':';
                 *(Parameter + i) = '\0';
                 return Parameter;
             }
@@ -252,14 +278,14 @@ String extractLabel(String_Constant line) {
 
 void printRegister(Register_Ptr reg) {
     if (reg) {
-        printf("REGISTER NAME: %s\n", reg->Register_Name);
-        printf("REGISTER TYPE: %s\n", Register_TYPES[reg->registerType]);
-        printf("REGISTER ADDRESS: %p\n", reg);
+        printf("       ===>REGISTER NAME: %s\n", reg->Register_Name);
+        printf("           REGISTER TYPE: %s\n", Register_TYPES[reg->registerType]);
+        printf("           REGISTER ADDRESS: %p\n", reg);
         if (reg->Data_Type_Settings)
-            printf("REGISTER VALUE (Double): %lf\n",
+            printf("       REGISTER VALUE (Double): %lf\n",
                    reg->Register_Values.Dval);
         else
-            printf("REGISTER VALUE (Long Long): %lld\n",
+            printf("           REGISTER VALUE (Long Long): %lld\n",
                    reg->Register_Values.Lval);
     }
 }
@@ -320,71 +346,78 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr) {
 void printLine(Line_Ptr line) {
     printf("------- INSTRUCTION -------\n");
     printf("LINE CODE: %s\n", line->lineCode ? line->lineCode : "(nil)");
-    switch (line->generalPurposeTokenPtr->tokenType) {
-        case AU_TOKEN_TYPE:
+    switch (line->linetype) {
+        case auLine:
             printf("INSTRUCTION TYPE: AU INSTRUCTION\n");
             printf("INSTRUCTION SET: %s\n", line->Instruction_String);
-            printf("REGISTER A TYPE: %s\n",
-                   Register_TYPES[line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType]);
+            printf("Registers {\n");
             printRegister(line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA);
             printRegister(line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB);
+            printf("}\n");
             break;
-        case JUMP_TOKEN_TYPE:
+        case jmpLine:
             printf("INSTRUCTION TYPE: JUMP INSTRUCTION\n");
             printf("INSTRUCTION SET: %s\n", line->Instruction_String);
             printf("ASSOCIATED LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.Jump_Token->Label_Name);
             printf("JUMPING LABEL ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.Jump_Token->Line_Address);
             if (line->generalPurposeTokenPtr->Tokens.Jump_Token->Instruction != JMP &&
                 line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token) {
+                printf("Registers {\n");
                 printRegister(line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterA);
                 printRegister(line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->RegisterB);
+                printf("}\n");
                 if (line->generalPurposeTokenPtr->Tokens.Jump_Token->Instruction != JMP)
                     printf("COMPARISON RETURN: %s\n",
                            CMP_RETURNS[line->generalPurposeTokenPtr->Tokens.Jump_Token->CMP_Token->CMP_Val]);
             }
             break;
-        case MSG_TOKEN_TYPE:
+        case msgLine:
             printf("INSTRUCTION TYPE: MSG INSTRUCTION\n");
             Msg_String_Ptr tempStringTree = line->generalPurposeTokenPtr->Tokens.MSG_Token->String_Tree;
             MSG_Register_Ptr tempRegisterTree = line->generalPurposeTokenPtr->Tokens.MSG_Token->Registers_Tree;
-            printf("MSG BODY: %s\n", line->generalPurposeTokenPtr->Tokens.MSG_Token->MSG_BODY);
+            printf("MESSAGE STRINGS {\n");
             while (tempStringTree) {
-                printf("STRING TOKEN: %s\n", tempStringTree->MSG_TOKEN_STRING);
-                printf("STRING IN MSG: %s\n", tempStringTree->message_string);
+                printf("     %s\n", tempStringTree->message_string);
                 tempStringTree = tempStringTree->Next_String;
             }
-            printf("Registers     {\n");
+            printf("}\n");
+            printf("Registers {\n");
             while (tempRegisterTree) {
                 printRegister(tempRegisterTree->REGISTER);
                 tempRegisterTree = tempRegisterTree->NEXT_REGISTER;
             }
             printf("}\n");
             break;
-        case RETURN_TOKEN_TYPE:
+        case returnLine:
             printf("INSTRUCTION TYPE: RETURN INSTRUCTION\n");
             printf("INSTRUCTION SET: RET\n");
-            printf("ASSOCIATED LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.Return_Token->Label_Name);
-            printf("ASSOCIATED LINE ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.Return_Token->Line_Address);
-            printf("ASSOCIATED CALL TOKEN: %p\n", line->generalPurposeTokenPtr->Tokens.Return_Token->callToken);
+            printf("ASSOCIATED LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.returnToken->Label_Name);
+            printf("ASSOCIATED CALL TOKEN: %p\n", line->generalPurposeTokenPtr->Tokens.returnToken->last_caller);
+            if (line->generalPurposeTokenPtr->Tokens.returnToken->last_caller)
+                printf("ASSOCIATED LINE ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.returnToken->last_caller);
+            else
+                printf("ASSOCIATED LINE ADDRESS: %p\n", NULL);
             break;
-        case END_TOKEN_TYPE:
+        case endLine:
             printf("INSTRUCTION TYPE: END INSTRUCTION\n");
             break;
-        case CALL_TOKEN_TYPE:
+        case callLine:
             printf("INSTRUCTION TYPE: CALL INSTRUCTION\n");
             printf("INSTRUCTION SET: %s\n", line->Instruction_String);
-            printf("ASSOCIATED LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.Call_Token->Label_Name);
-            printf("JUMPING LABEL ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.Call_Token->Line_Address);
+            printf("CALL LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.Call_Token->labelName);
+            printf("JUMPING LABEL ADDRESS: %p\n", line->generalPurposeTokenPtr->Tokens.Call_Token->labelLine);
             break;
-        case CMP_TOKEN_TYPE:
+        case cmpLine:
             printf("INSTRUCTION TYPE: CMP INSTRUCTION\n");
             printf("INSTRUCTION SET: %s\n", line->Instruction_String);
+            printf("Registers {\n");
             printRegister(line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA);
             printRegister(line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB);
+            printf("}\n");
             printf("COMPARISON RETURN: %s\n",
                    CMP_RETURNS[line->generalPurposeTokenPtr->Tokens.CMP_Token->CMP_Val]);
             break;
-        case LABEL_TOKEN_TYPE:
+        case labelLine:
             printf("INSTRUCTION TYPE: LABEL INSTRUCTION\n");
             printf("INSTRUCTION SET: (%s:)\n", line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name);
             printf("LABEL NAME: %s\n", line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name);
@@ -406,21 +439,6 @@ void printAllStackCode(Line_Ptr line) {
         printLine(line);
         line = line->Next_Line;
     }
-}
-
-unsigned stringTrim(String *lineStringPtr) {
-    if (**lineStringPtr) {
-        *lineStringPtr = strdup(*lineStringPtr);
-        while (**lineStringPtr == ' ' || **lineStringPtr == '\t')
-            (*lineStringPtr)++;
-        int i = 0;
-        for (; *(*lineStringPtr + i); i++);
-        for (; *(*lineStringPtr + i - 1) == ' ' || *(*lineStringPtr + i - 1) == '\t'; *(*lineStringPtr + i -
-                                                                                        1) = '\0', i--);
-        *lineStringPtr = strdup(*lineStringPtr);
-        return i;
-    } else
-        return 0;
 }
 
 unsigned beautify(String *code) {

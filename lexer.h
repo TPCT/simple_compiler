@@ -8,15 +8,17 @@ Register_Ptr extractRegister(String *code);
 
 Line_Ptr addLine(Line_Ptr *, Line_Ptr *);
 
+void assignLabelsToJumps(void);
+
+void assignLabelsToCalls(void);
+
+void assignReturnsToCalls(void);
+
 void codeReader(String code);
 
 void lineMaker(String token);
 
 void tokenize(String lineStringPtr, Line_Ptr line);
-
-void assignLabelsToJumps(void);
-
-void assignLabelsToCalls(void);
 
 void tempRegisterPtrAdd(Register_Ptr *savingRegister, Register_Ptr *registerPtr);
 
@@ -28,13 +30,13 @@ void addJump(Jump_Token_Ptr *savingPtr, Jump_Token_Ptr *jumpPtr);
 
 void addCall(Call_Token_Ptr *savingPtr, Call_Token_Ptr *callPtr);
 
-void makeCallToken(Line_Ptr line, String lineStringPtr);
+void makeCallToken(Line_Ptr line, String_Constant lineStringPtr);
 
-void makeCmpToken(Line_Ptr line, String lineStringPtr);
+void makeCmpToken(Line_Ptr line, String_Constant lineStringPtr);
 
-void makeMsgToken(Line_Ptr line, String Line);
+void makeMsgToken(Line_Ptr line, String_Constant Line);
 
-void makeAuToken(Line_Ptr line, String Line, Au_Instructions i);
+void makeAuToken(Line_Ptr line, String_Constant Line, Au_Instructions i);
 
 void makeJumpToken(Line_Ptr line, String Line, Jump_Instruction i);
 
