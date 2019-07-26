@@ -122,10 +122,9 @@ String extractParameter(String *line) {
             }
             *(Parameter + i) = *(tempLine + j);
         } else {
-            j++;
             if (!isString) {
                 *(Parameter + i) = '\0';
-                strcpy(*line, tempLine + j);
+                strcpy(*line, tempLine + j + 1);
                 free(tempLine);
                 return Parameter;
             } else {
@@ -194,49 +193,56 @@ String extractMsg(Line_Ptr line) {
         return NULL;
 }
 
-String extractLine(String *line) {
-    if (!line || !*line || !**line) {
-        if (line && *line && !**line) {
-            *line = NULL;
-        }
+String extractLine(String line) {
+    if (line && !*line)
+        return NULL;
+    static String previousData = NULL;
+#define CURRENTCHAR *(previousData + previousDataCounter)
+    if (line && *line) {
+        free(previousData);
+        previousData = strdup(line);
+    } else if (!line && !previousData) {
         return NULL;
     }
-    unsigned long long maxSize = 10;
+    unsigned long long maxSize = 10, previousDataCounter = 0;
     unsigned char isString = 0;
     String Parameter = (String) calloc(maxSize, sizeof(char));
-    for (unsigned int i = 0; **line; i++) {
-        if (i == maxSize - 4) {
+    for (unsigned int i = 0; CURRENTCHAR; previousDataCounter++, i++) {
+        if (i >= maxSize - 4) {
             maxSize += 10;
             String tempLine = (String) calloc(maxSize, sizeof(char));
             for (int j = 0; (*(tempLine + j) = *(Parameter + j)); j++);
             free(Parameter);
             Parameter = tempLine;
         }
-        if (**line != '\n') {
-            if (**line == '\'') {
+        if (CURRENTCHAR != '\n') {
+            if (CURRENTCHAR == '\'') {
                 if (isString)
                     isString = 0;
                 else
                     isString = 1;
             }
-            *(Parameter + i) = **line;
+            *(Parameter + i) = CURRENTCHAR;
         } else {
             if (!isString) {
-                (*line)++;
                 *(Parameter + i) = '\0';
+                String tempData = (String) calloc(strlen(previousData + previousDataCounter++), sizeof(char));
+                strcpy(tempData, previousData + previousDataCounter);
+                free(previousData);
+                previousData = tempData;
                 return Parameter;
             } else {
                 *(Parameter + i++) = '\\';
                 *(Parameter + i) = 'n';
             }
         }
-        (*line)++;
     }
-    *line = NULL;
     if (!*Parameter) {
         free(Parameter);
         return NULL;
     }
+    free(previousData);
+    previousData = NULL;
     return Parameter;
 }
 
@@ -248,7 +254,7 @@ String extractLabel(String_Constant line) {
     unsigned long long i = 0, j = 0;
     String Parameter = (String) calloc(maxSize, sizeof(char));
     for (; *(line + j); i++) {
-        if (i == maxSize - 4)
+        if (i >= maxSize - 4)
             maxSize += 10,
                     Parameter = (String) realloc(Parameter, sizeof(char) * maxSize);
         if (*(line + j) != ':') {
@@ -269,12 +275,8 @@ String extractLabel(String_Constant line) {
         }
         j++;
     }
-    *(Parameter + i) = '\0';
-    if (!*Parameter) {
-        free(Parameter);
-        return NULL;
-    }
-    return Parameter;
+    free(Parameter);
+    return NULL;
 }
 
 void printRegister(Register_Ptr reg) {
@@ -458,53 +460,44 @@ unsigned beautify(String *code) {
 #define PRESENT_CHAR *(*code + i)
     if (!*code)
         return 0;
-    unsigned i = 0, newCodeCounter = 0, length = 0;
+    unsigned long long i = 0, newCodeCounter = 0, length = 0;
     unsigned long long maxSize = 10;
     char lastChar = 0;
-    unsigned char setter = 0;
+    unsigned char isString = 0;
     String newCode = (String) calloc(maxSize, sizeof(char));
     for (; *(*code + (i > 0 ? i - 1 : 0)) && *(*code + (i > 0 ? i - 1 : 0)) != ';'; i++) {
-        if (newCodeCounter == maxSize - 4) {
+        if (newCodeCounter >= maxSize - 4) {
             maxSize += 10;
             newCode = (String) realloc(newCode, sizeof(char) * (maxSize));
         }
         if (PRESENT_CHAR == '\'') {
-            if (setter & (unsigned) 2)
-                setter &= (unsigned) 0b11111101;
+            if (isString)
+                isString = 0;
             else
-                setter |= (unsigned) 2;
-            if (lastChar)
-                *(newCode + newCodeCounter++) = lastChar;
+                isString = 1;
+            *(newCode + newCodeCounter++) = lastChar;
             lastChar = PRESENT_CHAR;
             continue;
         }
-        if (!(setter & (unsigned) 2)) {
+        if (!isString) {
             if ((!lastChar || lastChar == '\t' || lastChar == ' ' || lastChar == ',') &&
                 (PRESENT_CHAR == ' ' || !PRESENT_CHAR || PRESENT_CHAR == ':' ||
-                 PRESENT_CHAR == ',' || PRESENT_CHAR == '\t'))
+                 PRESENT_CHAR == ',' || PRESENT_CHAR == '\t')) {
                 continue;
-            else if (PRESENT_CHAR == '\t') {
+            } else if (lastChar && PRESENT_CHAR == '\t') {
                 *(newCode + newCodeCounter++) = ' ';
                 lastChar = ' ';
                 continue;
-            } else if (!lastChar && PRESENT_CHAR != ' ' && PRESENT_CHAR != '\t') {
-                if (setter & (unsigned) 1)
-                    *(newCode + newCodeCounter++) = lastChar;
-                setter |= (unsigned) 1;
-            } else if (lastChar != ' ' && PRESENT_CHAR != ' ' && PRESENT_CHAR != '\t') {
+            } else if (lastChar) {
                 *(newCode + newCodeCounter++) = lastChar;
-            } else {
-                if (setter & (unsigned) 1)
-                    *(newCode + newCodeCounter++) = lastChar;
             }
-            *(newCode + newCodeCounter++) = lastChar;
         } else {
+            *(newCode + newCodeCounter++) = lastChar;
         }
         lastChar = PRESENT_CHAR;
     }
-    *code = realloc(*code, 0);
+    free(*code);
     *(newCode + newCodeCounter) = '\0';
-    *code = strdup(newCode);
-    free(newCode);
+    *code = newCode;
     return length;
 }

@@ -11,12 +11,12 @@ static String_Constant RET = "RET";   /* For Returning To The Last Point and Exi
 static String_Constant END = "END";   /* For end of program detection */
 
 void codeReader(String code) {
-    do {
-        String token = extractLine(&code);
+    String token = extractLine(code);
+    while (token) {
         beautify(&token);
-        if (token)
-            lineMaker(token);
-    } while (code);
+        lineMaker(token);
+        token = extractLine(NULL);
+    }
     assignLabelsToJumps();
     assignLabelsToCalls();
 }

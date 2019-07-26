@@ -26,7 +26,7 @@ String extractParameter(String *line);
 
 String extractMsg(Line_Ptr line);
 
-String extractLine(String *line);
+String extractLine(String line);
 
 void printLine(Line_Ptr line);
 
