@@ -1,7 +1,8 @@
 #include "lexer.h"
 #include "tokens.h"
 
-static String AU_KEYWORDS[] = {"MOV", "ADD", "SUB", "DIV", "MUL", "INC", "DEC", NULL};
+#define GPT line->generalPurposeTokenPtr
+static String AU_KEYWORDS[] = {"MOV", "DIV", "MUL", "MOD", "ADD", "SUB", "INC", "DEC", "AND", "OR", "NOT", NULL};
 static String JUMP_KEYWORDS[] = {"JMP", "JNE", "JE", "JGE", "JG", "JLE", "JL", NULL};
 static String_Constant CMP = "CMP";
 static String_Constant CALL = "CALL"; /* For Calling Subroutine */
@@ -126,12 +127,12 @@ void tokenize(String lineString, Line_Ptr line) {
         token = extractCmd(&lineString, &isLbl);
         if (token) {
             line->Instruction_String = strdup(token);
-            line->generalPurposeTokenPtr = (GENERAL_PURPOSE_TOKEN_PTR) calloc(1, sizeof(GENERAL_PURPOSE_TOKEN));
+            GPT = (GENERAL_PURPOSE_TOKEN_PTR) calloc(1, sizeof(GENERAL_PURPOSE_TOKEN));
             line->Error = NULL;
             if (!isLbl) {
                 for (char i = 0; AU_KEYWORDS[i] || JUMP_KEYWORDS[i < 7 ? i : 7]; i++) {
                     if (!strcmp(AU_KEYWORDS[i], line->Instruction_String)) {
-                        makeAuToken(line, lineString, i);
+                        makeAluToken(line, lineString, i);
                         free(token);
                         free(lineString);
                         return;
@@ -195,7 +196,7 @@ void makeCallToken(Line_Ptr line, String_Constant lineStringPtr) {
     callTokenPtr->labelLine = NULL;
     callTokenPtr->callLabel = NULL;
     line->linetype = callLine;
-    addCall(&line->generalPurposeTokenPtr->Tokens.Call_Token, &callTokenPtr);
+    addCall(&GPT->Tokens.Call_Token, &callTokenPtr);
     free(tempData);
 }
 
@@ -218,7 +219,7 @@ void makeCmpToken(Line_Ptr line, String_Constant lineStringPtr) {
         LAST_CMP->RegisterB->registerType = UNDEFINED_REGISTER;
     free(registerPtr);
     line->linetype = cmpLine;
-    line->generalPurposeTokenPtr->Tokens.CMP_Token = LAST_CMP;
+    GPT->Tokens.CMP_Token = LAST_CMP;
     free(tempData);
 }
 
@@ -260,23 +261,24 @@ void makeMsgToken(Line_Ptr line, String_Constant lineStringPtr) {
         free(token);
     } while (tempData);
     line->linetype = msgLine;
-    line->generalPurposeTokenPtr->Tokens.MSG_Token = msgTokenPtr;
+    GPT->Tokens.MSG_Token = msgTokenPtr;
     free(tempData);
 }
 
-void makeAuToken(Line_Ptr line, String_Constant lineStringPtr, Au_Instructions i) {
-    Au_Token_Ptr auTokenPtr = (Au_Token_Ptr) calloc(1, sizeof(Au_Token));
+void makeAluToken(Line_Ptr line, String_Constant lineStringPtr, aluInstruction i) {
+    Alu_Token_Ptr auTokenPtr = (Alu_Token_Ptr) calloc(1, sizeof(Alu_Token));
     String tempData = strdup(lineStringPtr);
-    line->linetype = auLine;
-    line->generalPurposeTokenPtr->Tokens.Au_Token = auTokenPtr;
-    line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction = i;
-    if (line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction == MOV) {
+    line->linetype = aluLine;
+    GPT->Tokens.Alu_Token = auTokenPtr;
+    GPT->Tokens.Alu_Token->Instruction = i;
+    if (GPT->Tokens.Alu_Token->Instruction == MOV) {
         makeRegister(&auTokenPtr->RegisterA, &tempData);
         makeRegister(&auTokenPtr->RegisterB, &tempData);
-        if (line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType != TEMP_REGISTER)
-            line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA->registerType = SAVED_REGISTER;
-    } else if (line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction == INC
-               || line->generalPurposeTokenPtr->Tokens.Au_Token->Instruction == DEC) {
+        if (GPT->Tokens.Alu_Token->RegisterA->registerType != TEMP_REGISTER)
+            GPT->Tokens.Alu_Token->RegisterA->registerType = SAVED_REGISTER;
+    } else if (GPT->Tokens.Alu_Token->Instruction == INC
+               || GPT->Tokens.Alu_Token->Instruction == DEC
+               || GPT->Tokens.Alu_Token->Instruction == NOT) {
         specialMakeRegister(&auTokenPtr->RegisterA, &tempData);
         auTokenPtr->RegisterB = NULL;
     } else {
@@ -287,14 +289,13 @@ void makeAuToken(Line_Ptr line, String_Constant lineStringPtr, Au_Instructions i
 }
 
 void makeJumpToken(Line_Ptr line, String lineStringPtr, Jump_Instruction i) {
-    //assignLabelsToJumps();
     lineStringPtr = strReplace(lineStringPtr, ",", "");
     Jump_Token_Ptr jumpTokenPtr = (Jump_Token_Ptr) calloc(1, sizeof(Jump_Token));
     jumpTokenPtr->Label_Name = extractCmd(&lineStringPtr, NULL);
     jumpTokenPtr->Instruction = i;
     jumpTokenPtr->CMP_Token = LAST_CMP;
     line->linetype = jmpLine;
-    addJump(&line->generalPurposeTokenPtr->Tokens.Jump_Token, &jumpTokenPtr);
+    addJump(&GPT->Tokens.Jump_Token, &jumpTokenPtr);
     free(lineStringPtr);
 }
 
@@ -328,13 +329,13 @@ void makeUndefinedToken(Line_Ptr line) {
 void makeLabelToken(Line_Ptr line) {
     Label_Token_Ptr labelTokenPtr = (Label_Token_Ptr) calloc(1, sizeof(Label_Token));
     line->linetype = labelLine;
-    line->generalPurposeTokenPtr->Tokens.Label_Token = labelTokenPtr;
-    line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Address = line;
-    line->generalPurposeTokenPtr->Tokens.Label_Token->Next_Label = NULL;
-    line->generalPurposeTokenPtr->Tokens.Label_Token->Label_Name = strReplace(line->Instruction_String, ":", "");
-    line->generalPurposeTokenPtr->Tokens.Label_Token->last_caller = NULL;
-    line->generalPurposeTokenPtr->Tokens.Label_Token->called = False;
-    line->generalPurposeTokenPtr->Tokens.returnToken->hasReturn = False;
+    GPT->Tokens.Label_Token = labelTokenPtr;
+    GPT->Tokens.Label_Token->Label_Address = line;
+    GPT->Tokens.Label_Token->Next_Label = NULL;
+    GPT->Tokens.Label_Token->Label_Name = strReplace(line->Instruction_String, ":", "");
+    GPT->Tokens.Label_Token->last_caller = NULL;
+    GPT->Tokens.Label_Token->called = False;
+    GPT->Tokens.returnToken->hasReturn = False;
     Last_LABEL = labelTokenPtr;
     addLabel(&labelTokenPtr);
 }
@@ -342,12 +343,12 @@ void makeLabelToken(Line_Ptr line) {
 void makeReturnToken(Line_Ptr line) {
     line->linetype = returnLine;
     if (Last_LABEL) {
-        line->generalPurposeTokenPtr->Tokens.returnToken = Last_LABEL;
-        line->generalPurposeTokenPtr->Tokens.returnToken->hasReturn = True;
+        GPT->Tokens.returnToken = Last_LABEL;
+        GPT->Tokens.returnToken->hasReturn = True;
         Last_LABEL = NULL;
         return;
     }
-    line->generalPurposeTokenPtr->Tokens.Label_Token = NULL;
+    GPT->Tokens.Label_Token = NULL;
 }
 
 Register_Ptr extractRegister(String *code) {

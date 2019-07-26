@@ -1,8 +1,4 @@
-#ifndef REQUIREMENTS
-
 #include "Requirements.h"
-
-#endif
 
 Register_Ptr extractRegister(String *code);
 
@@ -11,8 +7,6 @@ Line_Ptr addLine(Line_Ptr *, Line_Ptr *);
 void assignLabelsToJumps(void);
 
 void assignLabelsToCalls(void);
-
-void assignReturnsToCalls(void);
 
 void codeReader(String code);
 
@@ -36,7 +30,7 @@ void makeCmpToken(Line_Ptr line, String_Constant lineStringPtr);
 
 void makeMsgToken(Line_Ptr line, String_Constant Line);
 
-void makeAuToken(Line_Ptr line, String_Constant Line, Au_Instructions i);
+void makeAluToken(Line_Ptr line, String_Constant Line, aluInstruction i);
 
 void makeJumpToken(Line_Ptr line, String Line, Jump_Instruction i);
 

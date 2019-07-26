@@ -1,7 +1,7 @@
 #include "parser.h"
 
-static String_Constant reservedWords[] = {"MOV", "ADD", "SUB", "DIV", "MUL", "INC", "DEC",
-                                          "JMP", "JNE", "JE", "JGE", "JG", "JLE", "JL",
+static String_Constant reservedWords[] = {"MOV", "ADD", "SUB", "DIV", "MUL", "MOD", "AND", "OR", "NOT", "INC", "DEC",
+                                          "JMP", "JNE", "JE", "JGE", "JG", "JLE", "JL", "\n",
                                           "CMP", "CALL", "MSG", "RET", "END", NULL};
 #define GPT line->generalPurposeTokenPtr
 
@@ -36,7 +36,7 @@ void checkLabelDuplications(Line_Ptr line) {
 }
 
 void registerNameChecker(Line_Ptr line, Register_Ptr *registerPtr) {
-    if ((line->linetype == auLine || line->linetype == cmpLine || line->linetype == msgLine) &&
+    if ((line->linetype == aluLine || line->linetype == cmpLine || line->linetype == msgLine) &&
         !line->Error) {
         if (*registerPtr) {
             for (int i = 0; reservedWords[i]; i++) {
@@ -68,8 +68,9 @@ void registerNameChecker(Line_Ptr line, Register_Ptr *registerPtr) {
                 }
             }
         } else {
-            if (line->linetype == auLine && (GPT->Tokens.Au_Token->Instruction == INC
-                                             || GPT->Tokens.Au_Token->Instruction == DEC));
+            if (line->linetype == aluLine && (GPT->Tokens.Alu_Token->Instruction == INC
+                                              || GPT->Tokens.Alu_Token->Instruction == DEC
+                                              || GPT->Tokens.Alu_Token->Instruction == NOT));
             else
                 line->Error = makeNullRegisterError(line->lineCode);
         }
@@ -117,22 +118,33 @@ void labelNameChecker(Line_Ptr line) {
 
 void lineParamChecker(Line_Ptr line) {
     switch (line->linetype) {
-        case auLine:
-            if (GPT->Tokens.Au_Token->Instruction == INC
-                || GPT->Tokens.Au_Token->Instruction == DEC) {
+        case aluLine:
+            if ((GPT->Tokens.Alu_Token->Instruction == MOD ||
+                 GPT->Tokens.Alu_Token->Instruction == AND ||
+                 GPT->Tokens.Alu_Token->Instruction == OR ||
+                 GPT->Tokens.Alu_Token->Instruction == NOT) &&
+                (GPT->Tokens.Alu_Token->RegisterA->Data_Type_Settings ||
+                 GPT->Tokens.Alu_Token->RegisterB->Data_Type_Settings)) {
+                line->Error = makeParamError(line->lineCode);
+                break;
+            }
+            if (GPT->Tokens.Alu_Token->Instruction == INC
+                || GPT->Tokens.Alu_Token->Instruction == DEC
+                || GPT->Tokens.Alu_Token->Instruction == NOT) {
                 if (paramsLens(line->lineCode) > 1)
                     line->Error = makeParamError(line->lineCode);
             } else {
                 if (paramsLens(line->lineCode) > 2)
                     line->Error = makeParamError(line->lineCode);
-            }
-            if (GPT->Tokens.Au_Token->RegisterA->registerType == TEMP_REGISTER) {
-                line->Error = makeRegisterTypeError("REGISTER A MUST BE A REAL REGISTER NOT A NUMBER",
-                                                    GPT->Tokens.Au_Token->RegisterA->registerType);
                 break;
             }
-            registerNameChecker(line, &GPT->Tokens.Au_Token->RegisterA);
-            registerNameChecker(line, &GPT->Tokens.Au_Token->RegisterB);
+            if (GPT->Tokens.Alu_Token->RegisterA->registerType == TEMP_REGISTER) {
+                line->Error = makeRegisterTypeError("REGISTER A MUST BE A REAL REGISTER NOT A NUMBER",
+                                                    GPT->Tokens.Alu_Token->RegisterA->registerType);
+                break;
+            }
+            registerNameChecker(line, &GPT->Tokens.Alu_Token->RegisterA);
+            registerNameChecker(line, &GPT->Tokens.Alu_Token->RegisterB);
             break;
         case cmpLine:
             if (paramsLens(line->lineCode) > 2)
@@ -229,6 +241,19 @@ unsigned paramsLens(String code) {
     } while (code && token);
     free(code);
     return paramsLen;
+}
+
+Error_Ptr makeParametersTypesError(String lineCode) {
+    Error_Ptr error = (Error_Ptr) malloc(sizeof(Error));
+    error->errorType = PARAMETRIZATION_ERROR;
+    unsigned length = snprintf(NULL, 0, "PARAMETER TYPE ERROR AT LINE ()%s",
+                               lineCode);
+    String errorMsg = malloc(sizeof(char) * (length + 1));
+    snprintf(errorMsg, length + 1, "PARAMETER TYPE ERROR ERROR AT LINE %s",
+             lineCode);
+    error->Error_MSG = errorMsg;
+    Error_Counter++;
+    return error;
 }
 
 Error_Ptr makeRegisterNamingError(String lineCode, String name) {

@@ -1,5 +1,7 @@
 #ifndef REQUIREMENTS
 #define REQUIREMENTS
+typedef char *String;
+typedef const char *const String_Constant;
 #include <string.h>
 #include <malloc.h>
 #include <ctype.h>

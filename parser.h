@@ -1,9 +1,4 @@
-#ifndef REQUIREMENTS
-
 #include "Requirements.h"
-
-#endif
-
 
 void parse(void);
 
@@ -16,6 +11,8 @@ void labelNameChecker(Line_Ptr line);
 void checkLabelDuplications(Line_Ptr line);
 
 unsigned paramsLens(String code);
+
+Error_Ptr makeParametersTypesError(String lineCode);
 
 Error_Ptr makeRegisterNamingError(String lineCode, String name);
 

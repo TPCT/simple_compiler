@@ -15,7 +15,7 @@ void totalCompile(void) {
             retCompile(&linePtr);
             cmpCompiler(linePtr);
             jmpCompile(&linePtr);
-            auCompile(linePtr);
+            aluCompile(linePtr);
             msgData = extractMsg(linePtr);
             //printLine(linePtr); /* this line to print any other argument*/
             if (msgData)
@@ -28,94 +28,109 @@ void totalCompile(void) {
     } else {
         printAllStackCode(linePtr);
     }
+    printf("\n%s\n", "This program exited with an error");
     exit(-1);
 }
 
-void auCompile(Line_Ptr line) {
-    if (line->linetype == auLine) {
+void aluCompile(Line_Ptr line) {
+    if (line->linetype == aluLine) {
         GENERAL_PURPOSE_TOKEN_PTR GPT_PTR = line->generalPurposeTokenPtr;
-        Au_Token_Ptr auTokenPtr = line->generalPurposeTokenPtr->Tokens.Au_Token;
-        switch (GPT_PTR->Tokens.Au_Token->Instruction) {
+        Alu_Token_Ptr aluTokenPtr = line->generalPurposeTokenPtr->Tokens.Alu_Token;
+        switch (GPT_PTR->Tokens.Alu_Token->Instruction) {
             case MOV:
-                if (auTokenPtr->RegisterB->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval = auTokenPtr->RegisterB->Register_Values.Dval;
+                if (aluTokenPtr->RegisterB->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterB->Register_Values.Dval;
                 else
-                    auTokenPtr->RegisterA->Data_Type_Settings = 0,
-                            auTokenPtr->RegisterA->Register_Values.Lval = auTokenPtr->RegisterB->Register_Values.Lval;
-                break;
-            case ADD:
-                if (auTokenPtr->RegisterB->Data_Type_Settings && auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval += auTokenPtr->RegisterB->Register_Values.Dval;
-                else if (auTokenPtr->RegisterB->Data_Type_Settings && !auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                    auTokenPtr->RegisterA->Register_Values.Dval = auTokenPtr->RegisterA->Register_Values.Lval,
-                    auTokenPtr->RegisterA->Register_Values.Dval += auTokenPtr->RegisterB->Register_Values.Dval;
-                else if (!auTokenPtr->RegisterB->Data_Type_Settings && !auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 0,
-                            auTokenPtr->RegisterA->Register_Values.Lval += auTokenPtr->RegisterB->Register_Values.Lval;
-                else
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval += auTokenPtr->RegisterB->Register_Values.Lval;
-                break;
-            case SUB:
-                if (auTokenPtr->RegisterB->Data_Type_Settings && auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval -= auTokenPtr->RegisterB->Register_Values.Dval;
-                else if (auTokenPtr->RegisterB->Data_Type_Settings && !auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                    auTokenPtr->RegisterA->Register_Values.Dval = auTokenPtr->RegisterA->Register_Values.Lval,
-                    auTokenPtr->RegisterA->Register_Values.Dval -= auTokenPtr->RegisterB->Register_Values.Dval;
-                else if (!auTokenPtr->RegisterB->Data_Type_Settings && !auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 0,
-                            auTokenPtr->RegisterA->Register_Values.Lval -= auTokenPtr->RegisterB->Register_Values.Lval;
-                else
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval -= auTokenPtr->RegisterB->Register_Values.Lval;
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 0,
+                            aluTokenPtr->RegisterA->Register_Values.Lval = aluTokenPtr->RegisterB->Register_Values.Lval;
                 break;
             case MUL:
-                if (auTokenPtr->RegisterB->Data_Type_Settings && auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval *= auTokenPtr->RegisterB->Register_Values.Dval;
-                else if (auTokenPtr->RegisterB->Data_Type_Settings && !auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                    auTokenPtr->RegisterA->Register_Values.Dval = auTokenPtr->RegisterA->Register_Values.Lval,
-                    auTokenPtr->RegisterA->Register_Values.Dval *= auTokenPtr->RegisterB->Register_Values.Dval;
-                else if (!auTokenPtr->RegisterB->Data_Type_Settings && !auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 0,
-                            auTokenPtr->RegisterA->Register_Values.Lval *= auTokenPtr->RegisterB->Register_Values.Lval;
+                if (aluTokenPtr->RegisterB->Data_Type_Settings && aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval *= aluTokenPtr->RegisterB->Register_Values.Dval;
+                else if (aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                    aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterA->Register_Values.Lval,
+                    aluTokenPtr->RegisterA->Register_Values.Dval *= aluTokenPtr->RegisterB->Register_Values.Dval;
+                else if (!aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 0,
+                            aluTokenPtr->RegisterA->Register_Values.Lval *= aluTokenPtr->RegisterB->Register_Values.Lval;
                 else
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval *= auTokenPtr->RegisterB->Register_Values.Lval;
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval *= aluTokenPtr->RegisterB->Register_Values.Lval;
                 break;
             case DIV:
-                if (auTokenPtr->RegisterB->Data_Type_Settings && auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval /= auTokenPtr->RegisterB->Register_Values.Dval;
-                else if (auTokenPtr->RegisterB->Data_Type_Settings && !auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                    auTokenPtr->RegisterA->Register_Values.Dval = auTokenPtr->RegisterA->Register_Values.Lval,
-                    auTokenPtr->RegisterA->Register_Values.Dval /= auTokenPtr->RegisterB->Register_Values.Dval;
-                else if (!auTokenPtr->RegisterB->Data_Type_Settings && !auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Data_Type_Settings = 0,
-                            auTokenPtr->RegisterA->Register_Values.Lval /= auTokenPtr->RegisterB->Register_Values.Lval;
+                if (aluTokenPtr->RegisterB->Data_Type_Settings && aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval /= aluTokenPtr->RegisterB->Register_Values.Dval;
+                else if (aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                    aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterA->Register_Values.Lval,
+                    aluTokenPtr->RegisterA->Register_Values.Dval /= aluTokenPtr->RegisterB->Register_Values.Dval;
+                else if (!aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 0,
+                            aluTokenPtr->RegisterA->Register_Values.Lval /= aluTokenPtr->RegisterB->Register_Values.Lval;
                 else
-                    auTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            auTokenPtr->RegisterA->Register_Values.Dval /= auTokenPtr->RegisterB->Register_Values.Lval;
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval /= aluTokenPtr->RegisterB->Register_Values.Lval;
+                break;
+            case MOD:
+                aluTokenPtr->RegisterA->Register_Values.Lval %= aluTokenPtr->RegisterB->Register_Values.Lval;
                 break;
             case INC:
-                if (auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Register_Values.Dval += 1;
+                if (aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Register_Values.Dval += 1;
                 else
-                    auTokenPtr->RegisterA->Data_Type_Settings = 0,
-                            auTokenPtr->RegisterA->Register_Values.Lval += 1;
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 0,
+                            aluTokenPtr->RegisterA->Register_Values.Lval += 1;
                 break;
             case DEC:
-                if (auTokenPtr->RegisterA->Data_Type_Settings)
-                    auTokenPtr->RegisterA->Register_Values.Dval -= 1;
+                if (aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Register_Values.Dval -= 1;
                 else
-                    auTokenPtr->RegisterA->Register_Values.Lval -= 1;
+                    aluTokenPtr->RegisterA->Register_Values.Lval -= 1;
+                break;
+            case ADD:
+                if (aluTokenPtr->RegisterB->Data_Type_Settings && aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval += aluTokenPtr->RegisterB->Register_Values.Dval;
+                else if (aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                    aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterA->Register_Values.Lval,
+                    aluTokenPtr->RegisterA->Register_Values.Dval += aluTokenPtr->RegisterB->Register_Values.Dval;
+                else if (!aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 0,
+                            aluTokenPtr->RegisterA->Register_Values.Lval += aluTokenPtr->RegisterB->Register_Values.Lval;
+                else
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval += aluTokenPtr->RegisterB->Register_Values.Lval;
+                break;
+            case SUB:
+                if (aluTokenPtr->RegisterB->Data_Type_Settings && aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval -= aluTokenPtr->RegisterB->Register_Values.Dval;
+                else if (aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                    aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterA->Register_Values.Lval,
+                    aluTokenPtr->RegisterA->Register_Values.Dval -= aluTokenPtr->RegisterB->Register_Values.Dval;
+                else if (!aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 0,
+                            aluTokenPtr->RegisterA->Register_Values.Lval -= aluTokenPtr->RegisterB->Register_Values.Lval;
+                else
+                    aluTokenPtr->RegisterA->Data_Type_Settings = 1,
+                            aluTokenPtr->RegisterA->Register_Values.Dval -= aluTokenPtr->RegisterB->Register_Values.Lval;
+                break;
+            case AND:
+                aluTokenPtr->RegisterA->Register_Values.Lval = (unsigned) aluTokenPtr->RegisterA->Register_Values.Lval &
+                                                               (unsigned) aluTokenPtr->RegisterB->Register_Values.Lval;
+                break;
+            case OR:
+                aluTokenPtr->RegisterA->Register_Values.Lval = (unsigned) aluTokenPtr->RegisterA->Register_Values.Lval |
+                                                               (unsigned) aluTokenPtr->RegisterB->Register_Values.Lval;
+                break;
+            case NOT:
+                aluTokenPtr->RegisterA->Register_Values.Lval = ~(unsigned) aluTokenPtr->RegisterA->Register_Values.Lval;
                 break;
         }
     }

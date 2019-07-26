@@ -1,10 +1,8 @@
 #ifndef TOKENS
 #define TOKENS
-typedef char *String;
-typedef char const *const String_Constant;
 typedef struct MSG_REGISTER *MSG_Register_Ptr;
 typedef struct Register *Register_Ptr;
-typedef struct Au_Token *Au_Token_Ptr;
+typedef struct Alu_Token *Alu_Token_Ptr;
 typedef struct Label_Token *Label_Token_Ptr;
 typedef struct Jump_Token *Jump_Token_Ptr;
 typedef struct MSG_STRING *Msg_String_Ptr;
@@ -17,7 +15,7 @@ typedef struct Call_Token *Call_Token_Ptr;
 typedef struct Calls_Tree *Calls_Tree_Ptr;
 
 typedef enum lineType {
-    auLine = 1, jmpLine, labelLine,
+    aluLine = 1, jmpLine, labelLine,
     callLine, msgLine, returnLine,
     endLine, cmpLine, undefinedLine
 } lineType;
@@ -39,9 +37,9 @@ typedef enum Error_Type {
 typedef enum {
     False = 0, True = 1
 } bool;
-typedef enum Au_Instruction {
-    MOV, ADD, SUB, DIV, MUL, INC, DEC
-} Au_Instructions;
+typedef enum aluInstruction {
+    MOV, DIV, MUL, MOD, ADD, SUB, INC, DEC, AND, OR, NOT
+} aluInstruction;
 typedef enum Register_Type {
     SAVED_REGISTER,
     UNDEFINED_REGISTER,
@@ -68,11 +66,11 @@ typedef struct Register {
     } Register_Values;
     Register_Ptr Next_Register;
 } Register;
-typedef struct Au_Token {
-    Au_Instructions Instruction;
+typedef struct Alu_Token {
+    aluInstruction Instruction;
     Register_Ptr RegisterA;
     Register_Ptr RegisterB;
-} Au_Token;
+} Alu_Token;
 typedef struct CMP_Token {
     Register_Ptr RegisterA;
     Register_Ptr RegisterB;
@@ -134,7 +132,7 @@ typedef struct Calls_Tree {
 
 typedef struct GENERAL_PURPOSE_TOKEN {
     union Tokens {
-        Au_Token_Ptr Au_Token;
+        Alu_Token_Ptr Alu_Token;
         Jump_Token_Ptr Jump_Token;
         Label_Token_Ptr Label_Token;
         Msg_Token_Ptr MSG_Token;

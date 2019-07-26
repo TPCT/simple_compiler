@@ -6,7 +6,7 @@
 
 void totalCompile(void);
 
-void auCompile(Line_Ptr line);
+void aluCompile(Line_Ptr line);
 
 void cmpCompiler(Line_Ptr line);
 

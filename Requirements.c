@@ -303,7 +303,6 @@ Register_Ptr searchRegister(Register_Ptr *registerPtr) {
                     || (*installationRegister)->Register_Values.Dval == (*registerPtr)->Register_Values.Dval
             )) {
                 if (*registerPtr != *installationRegister)
-                    free((*registerPtr)->Register_Name),
                             free(*registerPtr),
                             *registerPtr = NULL;
                 return *installationRegister;
@@ -348,12 +347,12 @@ void printLine(Line_Ptr line) {
     printf("------- INSTRUCTION -------\n");
     printf("LINE CODE: %s\n", line->lineCode ? line->lineCode : "(nil)");
     switch (line->linetype) {
-        case auLine:
+        case aluLine:
             printf("INSTRUCTION TYPE: AU INSTRUCTION\n");
             printf("INSTRUCTION SET: %s\n", line->Instruction_String);
             printf("Registers {\n");
-            printRegister(line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterA);
-            printRegister(line->generalPurposeTokenPtr->Tokens.Au_Token->RegisterB);
+            printRegister(line->generalPurposeTokenPtr->Tokens.Alu_Token->RegisterA);
+            printRegister(line->generalPurposeTokenPtr->Tokens.Alu_Token->RegisterB);
             printf("}\n");
             break;
         case jmpLine:
