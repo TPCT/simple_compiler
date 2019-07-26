@@ -23,6 +23,5 @@ int main(int argc, char *args[]) {
     codeReader(Code);
     parse();
     totalCompile();
-    printAllStackCode(Actual_Lines_tree);
 }
 

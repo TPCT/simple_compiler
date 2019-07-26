@@ -22,9 +22,9 @@ String strReplace(String_Constant string, String_Constant substr, String_Constan
     char *tok = NULL;
     char *newstr = NULL;
     char *oldstr = NULL;
-    int oldstr_len = 0;
-    int substr_len = 0;
-    int replacement_len = 0;
+    unsigned int oldstr_len = 0;
+    unsigned int substr_len = 0;
+    unsigned int replacement_len = 0;
     newstr = strdup(string);
     substr_len = strlen(substr);
     replacement_len = strlen(replacement);
@@ -348,7 +348,7 @@ void printLine(Line_Ptr line) {
     printf("LINE CODE: %s\n", line->lineCode ? line->lineCode : "(nil)");
     switch (line->linetype) {
         case aluLine:
-            printf("INSTRUCTION TYPE: AU INSTRUCTION\n");
+            printf("INSTRUCTION TYPE: ALU INSTRUCTION\n");
             printf("INSTRUCTION SET: %s\n", line->Instruction_String);
             printf("Registers {\n");
             printRegister(line->generalPurposeTokenPtr->Tokens.Alu_Token->RegisterA);
@@ -460,7 +460,8 @@ unsigned beautify(String *code) {
         return 0;
     unsigned i = 0, newCodeCounter = 0, length = 0;
     unsigned long long maxSize = 10;
-    unsigned char lastChar = 0, setter = 0;
+    char lastChar = 0;
+    unsigned char setter = 0;
     String newCode = (String) calloc(maxSize, sizeof(char));
     for (; *(*code + (i > 0 ? i - 1 : 0)) && *(*code + (i > 0 ? i - 1 : 0)) != ';'; i++) {
         if (newCodeCounter == maxSize - 4) {
@@ -496,8 +497,8 @@ unsigned beautify(String *code) {
                 if (setter & (unsigned) 1)
                     *(newCode + newCodeCounter++) = lastChar;
             }
-        } else {
             *(newCode + newCodeCounter++) = lastChar;
+        } else {
         }
         lastChar = PRESENT_CHAR;
     }

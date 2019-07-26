@@ -51,14 +51,14 @@ void aluCompile(Line_Ptr line) {
                             aluTokenPtr->RegisterA->Register_Values.Dval *= aluTokenPtr->RegisterB->Register_Values.Dval;
                 else if (aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
                     aluTokenPtr->RegisterA->Data_Type_Settings = 1,
-                    aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterA->Register_Values.Lval,
+                    aluTokenPtr->RegisterA->Register_Values.Dval = (double) aluTokenPtr->RegisterA->Register_Values.Lval,
                     aluTokenPtr->RegisterA->Register_Values.Dval *= aluTokenPtr->RegisterB->Register_Values.Dval;
                 else if (!aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
                     aluTokenPtr->RegisterA->Data_Type_Settings = 0,
                             aluTokenPtr->RegisterA->Register_Values.Lval *= aluTokenPtr->RegisterB->Register_Values.Lval;
                 else
                     aluTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            aluTokenPtr->RegisterA->Register_Values.Dval *= aluTokenPtr->RegisterB->Register_Values.Lval;
+                            aluTokenPtr->RegisterA->Register_Values.Dval *= (double) aluTokenPtr->RegisterB->Register_Values.Lval;
                 break;
             case DIV:
                 if (aluTokenPtr->RegisterB->Data_Type_Settings && aluTokenPtr->RegisterA->Data_Type_Settings)
@@ -66,14 +66,14 @@ void aluCompile(Line_Ptr line) {
                             aluTokenPtr->RegisterA->Register_Values.Dval /= aluTokenPtr->RegisterB->Register_Values.Dval;
                 else if (aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
                     aluTokenPtr->RegisterA->Data_Type_Settings = 1,
-                    aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterA->Register_Values.Lval,
+                    aluTokenPtr->RegisterA->Register_Values.Dval = (double) aluTokenPtr->RegisterA->Register_Values.Lval,
                     aluTokenPtr->RegisterA->Register_Values.Dval /= aluTokenPtr->RegisterB->Register_Values.Dval;
                 else if (!aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
                     aluTokenPtr->RegisterA->Data_Type_Settings = 0,
                             aluTokenPtr->RegisterA->Register_Values.Lval /= aluTokenPtr->RegisterB->Register_Values.Lval;
                 else
                     aluTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            aluTokenPtr->RegisterA->Register_Values.Dval /= aluTokenPtr->RegisterB->Register_Values.Lval;
+                            aluTokenPtr->RegisterA->Register_Values.Dval /= (double) aluTokenPtr->RegisterB->Register_Values.Lval;
                 break;
             case MOD:
                 aluTokenPtr->RegisterA->Register_Values.Lval %= aluTokenPtr->RegisterB->Register_Values.Lval;
@@ -97,14 +97,14 @@ void aluCompile(Line_Ptr line) {
                             aluTokenPtr->RegisterA->Register_Values.Dval += aluTokenPtr->RegisterB->Register_Values.Dval;
                 else if (aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
                     aluTokenPtr->RegisterA->Data_Type_Settings = 1,
-                    aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterA->Register_Values.Lval,
+                    aluTokenPtr->RegisterA->Register_Values.Dval = (double) aluTokenPtr->RegisterA->Register_Values.Lval,
                     aluTokenPtr->RegisterA->Register_Values.Dval += aluTokenPtr->RegisterB->Register_Values.Dval;
                 else if (!aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
                     aluTokenPtr->RegisterA->Data_Type_Settings = 0,
                             aluTokenPtr->RegisterA->Register_Values.Lval += aluTokenPtr->RegisterB->Register_Values.Lval;
                 else
                     aluTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            aluTokenPtr->RegisterA->Register_Values.Dval += aluTokenPtr->RegisterB->Register_Values.Lval;
+                            aluTokenPtr->RegisterA->Register_Values.Dval += (double) aluTokenPtr->RegisterB->Register_Values.Lval;
                 break;
             case SUB:
                 if (aluTokenPtr->RegisterB->Data_Type_Settings && aluTokenPtr->RegisterA->Data_Type_Settings)
@@ -112,14 +112,14 @@ void aluCompile(Line_Ptr line) {
                             aluTokenPtr->RegisterA->Register_Values.Dval -= aluTokenPtr->RegisterB->Register_Values.Dval;
                 else if (aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
                     aluTokenPtr->RegisterA->Data_Type_Settings = 1,
-                    aluTokenPtr->RegisterA->Register_Values.Dval = aluTokenPtr->RegisterA->Register_Values.Lval,
+                    aluTokenPtr->RegisterA->Register_Values.Dval = (double) aluTokenPtr->RegisterA->Register_Values.Lval,
                     aluTokenPtr->RegisterA->Register_Values.Dval -= aluTokenPtr->RegisterB->Register_Values.Dval;
                 else if (!aluTokenPtr->RegisterB->Data_Type_Settings && !aluTokenPtr->RegisterA->Data_Type_Settings)
                     aluTokenPtr->RegisterA->Data_Type_Settings = 0,
                             aluTokenPtr->RegisterA->Register_Values.Lval -= aluTokenPtr->RegisterB->Register_Values.Lval;
                 else
                     aluTokenPtr->RegisterA->Data_Type_Settings = 1,
-                            aluTokenPtr->RegisterA->Register_Values.Dval -= aluTokenPtr->RegisterB->Register_Values.Lval;
+                            aluTokenPtr->RegisterA->Register_Values.Dval -= (double) aluTokenPtr->RegisterB->Register_Values.Lval;
                 break;
             case AND:
                 aluTokenPtr->RegisterA->Register_Values.Lval = (unsigned) aluTokenPtr->RegisterA->Register_Values.Lval &
@@ -144,12 +144,12 @@ void cmpCompiler(Line_Ptr line) {
                                               ?
                                               line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->Register_Values.Dval
                                               :
-                                              line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->Register_Values.Lval);
+                                              (double) line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterA->Register_Values.Lval);
             double registerBValue = (double) (line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->Data_Type_Settings
                                               ?
                                               line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->Register_Values.Dval
                                               :
-                                              line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->Register_Values.Lval);
+                                              (double) line->generalPurposeTokenPtr->Tokens.CMP_Token->RegisterB->Register_Values.Lval);
             if (registerAValue == registerBValue)
                 line->generalPurposeTokenPtr->Tokens.CMP_Token->CMP_Val = EQUAL;
             else if (registerAValue > registerBValue)
@@ -212,6 +212,9 @@ void retCompile(Line_Ptr *line) {
 }
 
 /** TODO:
+ * include codes from other files
+ * adding std libs -> for specific operations
+ * adding handling strings in registers
  * nested functions handling
  * user input handling
 **/

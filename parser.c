@@ -47,7 +47,7 @@ void registerNameChecker(Line_Ptr line, Register_Ptr *registerPtr) {
                 }
             }
             for (unsigned i = 0, c; (c = *((*registerPtr)->Register_Name + i)); i++) {
-                if (((!i && isdigit(c))) || c == ' ') {
+                if (((!i && isdigit(c))) || c == ' ' || c == '\'') {
                     line->Error = makeRegisterNamingError(line->lineCode,
                                                           (*registerPtr)->Register_Name);
                     return;
@@ -128,15 +128,19 @@ void lineParamChecker(Line_Ptr line) {
                 line->Error = makeParamError(line->lineCode);
                 break;
             }
+
             if (GPT->Tokens.Alu_Token->Instruction == INC
                 || GPT->Tokens.Alu_Token->Instruction == DEC
                 || GPT->Tokens.Alu_Token->Instruction == NOT) {
-                if (paramsLens(line->lineCode) > 1)
+                if (paramsLens(line->lineCode) > 1) {
                     line->Error = makeParamError(line->lineCode);
+                    break;
+                }
             } else {
-                if (paramsLens(line->lineCode) > 2)
+                if (paramsLens(line->lineCode) > 2) {
                     line->Error = makeParamError(line->lineCode);
-                break;
+                    break;
+                }
             }
             if (GPT->Tokens.Alu_Token->RegisterA->registerType == TEMP_REGISTER) {
                 line->Error = makeRegisterTypeError("REGISTER A MUST BE A REAL REGISTER NOT A NUMBER",
