@@ -1,5 +1,5 @@
 #include "Requirements.h"
-#include "tokens.h"
+#include "sys/stat.h"
 
 String_Constant CMP_RETURNS[] = {"EQUAL", "GREATER THAN", "LESS THAN"};
 String_Constant Register_TYPES[] = {"SAVED REGISTER", "UNDEFINED REGISTER", "TEMP REGISTER"};

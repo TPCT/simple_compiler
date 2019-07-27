@@ -28,11 +28,10 @@ String extractMsg(Line_Ptr line);
 
 String extractLine(String line);
 
-void printLine(Line_Ptr line);
-
 void printRegister(Register_Ptr reg);
 void printAllStackCode(Line_Ptr line);
 
+void printLine(Line_Ptr line);
 
 unsigned beautify(String *code);
 
